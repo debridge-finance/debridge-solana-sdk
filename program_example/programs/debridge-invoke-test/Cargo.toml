@@ -1,5 +1,5 @@
 [package]
-name = "debridge-invoke-test"
+name = "debridge-invoke-example"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2021"

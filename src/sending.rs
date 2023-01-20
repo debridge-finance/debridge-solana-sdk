@@ -1,10 +1,11 @@
-use std::str::FromStr;
+use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, instruction::Instruction, program::invoke,
+    account_info::AccountInfo,
+    entrypoint::ProgramResult,
+    instruction::{AccountMeta, Instruction},
+    program::invoke,
+    program_error::ProgramError,
 };
-use solana_program::instruction::AccountMeta;
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
 
 struct MetaTemplate {
     is_signer: bool,
@@ -12,115 +13,182 @@ struct MetaTemplate {
 }
 
 const SEND_META_TEMPLATE: [MetaTemplate; 18] = [
-    /// Bridge
+    // Bridge
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// Token Mint
+    // Token Mint
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// Staking wallet
+    // Staking wallet
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// Mint authority
+    // Mint authority
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    /// Chain support info
+    // Chain support info
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    /// Settings program
+    // Settings program
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    /// Spl token program
+    // Spl token program
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    /// State
+    // State
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// Fee beneficiary
+    // Fee beneficiary
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// Nonce storage
+    // Nonce storage
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// Send from wallet
+    // Send from wallet
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// System program
+    // System program
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    /// External call storage
+    // External call storage
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// External call meta
+    // External call meta
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    /// Send from
+    // Send from
     MetaTemplate {
         is_signer: true,
         is_writable: true,
     },
-    /// Discount
+    // Discount
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    /// Bridge fee
+    // Bridge fee
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    /// Debridge program
+    // Debridge program
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
 ];
 
-pub fn invoke_send(account_infos: &[AccountInfo]) -> ProgramResult {
+#[derive(BorshSerialize, BorshDeserialize)]
+pub struct SendSubmissionParamsInput {
+    pub execution_fee: u64,
+    pub reserved_flag: [u8; 32],
+    pub fallback_address: Vec<u8>,
+    pub external_call_shortcut: [u8; 32],
+}
 
+#[derive(BorshSerialize, BorshDeserialize)]
+pub struct SendIx {
+    target_chain_id: [u8; 32],
+    receiver: Vec<u8>,
+    is_use_asset_fee: bool,
+    amount: u64,
+    submission_params: Option<SendSubmissionParamsInput>,
+    referral_code: Option<u32>,
+}
+const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
+
+pub fn invoke_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramResult {
     if account_infos.len() < SEND_META_TEMPLATE.len() {
-        return Err(ProgramError::NotEnoughAccountKeys)
+        return Err(ProgramError::NotEnoughAccountKeys);
     }
 
     let ix = Instruction {
         //TODO: Need to check debridge id?
-        program_id: account_infos[SEND_META_TEMPLATE.len() - 1].key.clone(),
-        accounts: account_infos.iter().take(SEND_META_TEMPLATE.len()).zip(SEND_META_TEMPLATE)
+        program_id: *account_infos[SEND_META_TEMPLATE.len() - 1].key,
+        accounts: account_infos
+            .iter()
+            .take(SEND_META_TEMPLATE.len())
+            .zip(SEND_META_TEMPLATE)
             .map(|(acc, meta)| AccountMeta {
-                pubkey: acc.key.clone(),
+                pubkey: *acc.key,
                 is_signer: meta.is_signer,
                 is_writable: meta.is_writable,
-            }).collect(),
-        data: vec![],
+            })
+            .collect(),
+        data: SEND_DISCRIMINATOR
+            .into_iter()
+            .chain(send_ix.try_to_vec()?)
+            .collect(),
     };
 
     invoke(&ix, account_infos)
+}
+
+#[cfg(test)]
+mod tests {
+    use borsh::BorshSerialize;
+
+    use crate::sending::{SendIx, SendSubmissionParamsInput, SEND_DISCRIMINATOR};
+
+    #[test]
+    fn test_send_ix_consistency() {
+        let send_ix = SendIx {
+            target_chain_id: [13; 32],
+            receiver: vec![14; 32],
+            is_use_asset_fee: false,
+            amount: 1000,
+            submission_params: Some(SendSubmissionParamsInput {
+                execution_fee: 100,
+                reserved_flag: [1; 32],
+                fallback_address: vec![15; 32],
+                external_call_shortcut: [16; 32],
+            }),
+            referral_code: Some(2000),
+        };
+
+        assert_eq!(
+            SEND_DISCRIMINATOR
+                .into_iter()
+                .chain(send_ix.try_to_vec().expect("Unreachable"))
+                .collect::<Vec<u8>>(),
+            vec![
+                102, 251, 20, 187, 65, 75, 12, 69, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+                13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 32,
+                0, 0, 0, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+                14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 232, 3, 0, 0, 0, 0, 0,
+                0, 1, 100, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 32, 0, 0, 0, 15, 15, 15, 15, 15, 15,
+                15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+                15, 15, 15, 15, 15, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+                16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 1, 208, 7, 0, 0
+            ]
+        )
+    }
 }
