@@ -3,7 +3,7 @@
 use anchor_lang::{prelude::*, solana_program::sysvar};
 use debridge_sdk::{
     check_claiming::check_execution_context,
-    sending::{invoke_send, SendIx},
+    sending::{invoke_debridge_send, SendIx},
 };
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -13,7 +13,7 @@ pub mod debridge_invoke_example {
     use super::*;
 
     pub fn send_via_debridge(ctx: Context<SendViaDebridge>, send_ix: SendIx) -> Result<()> {
-        invoke_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
     pub fn check_claiming(

@@ -124,7 +124,7 @@ pub struct SendIx {
 }
 const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
 
-pub fn invoke_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramResult {
+pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramResult {
     if account_infos.len() < SEND_META_TEMPLATE.len() {
         return Err(ProgramError::NotEnoughAccountKeys);
     }
@@ -142,10 +142,11 @@ pub fn invoke_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramRes
                 is_writable: meta.is_writable,
             })
             .collect(),
-        data: SEND_DISCRIMINATOR
-            .into_iter()
-            .chain(send_ix.try_to_vec()?)
-            .collect(),
+        data: [
+            SEND_DISCRIMINATOR.as_slice(),
+            send_ix.try_to_vec()?.as_slice(),
+        ]
+        .concat(),
     };
 
     invoke(&ix, account_infos)

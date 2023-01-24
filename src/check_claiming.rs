@@ -4,8 +4,11 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
+//TODO: Fill it
 const DEBRIDGE_ID: Pubkey = Pubkey::new_from_array([0; 32]);
 const EXECUTE_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [0; 8];
+const SUBMISSION_ACCOUNT_DISCRIMINATOR: [u8; 8] = [0; 8];
+
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SubmissionAccount {
     pub claimer: Pubkey,
@@ -22,7 +25,11 @@ impl TryFrom<&AccountInfo<'_>> for SubmissionAccount {
 
     fn try_from(account_info: &AccountInfo) -> Result<Self, Self::Error> {
         let borrow_data = account_info.try_borrow_data()?;
-        let (_discriminator, data) = borrow_data.split_at(8);
+        let (discriminator, data) = borrow_data.split_at(8);
+
+        if discriminator.ne(&SUBMISSION_ACCOUNT_DISCRIMINATOR) {
+            return Err(Error::WrongSubmissionAccountDiscriminator.into());
+        }
 
         SubmissionAccount::try_from_slice(data)
             .map_err(|_| Error::SubmissionDeserializeError.into())
@@ -43,10 +50,14 @@ pub enum Error {
     WrongClaimParentSubmissionAuth,
     #[error("Wrong parent debridge-submission native sender. This method must be called by debridge program in execute_external call")]
     WrongClaimParentNativeSender,
+    #[error("Wrong parent debridge-submission source chain id. This method must be called by debridge program in execute_external call")]
+    WrongClaimParentSourceChainId,
     #[error("Wrong parent ix program id. This method must be called by debridge program in execute_external call")]
     WrongClaimParentProgramId,
     #[error("Failed while submission account deserializing")]
     SubmissionDeserializeError,
+    #[error("Provided submssion account with wrong discriminator")]
+    WrongSubmissionAccountDiscriminator,
 }
 
 impl From<Error> for ProgramError {
@@ -59,6 +70,7 @@ pub fn check_execution_context(
     instructions: &AccountInfo,
     submission: &AccountInfo,
     submission_authority: &AccountInfo,
+    source_chain_id: [u8; 32],
     native_sender: Option<Vec<u8>>,
 ) -> ProgramResult {
     use solana_program::sysvar::instructions;
@@ -125,6 +137,15 @@ pub fn check_execution_context(
     }
 
     let submission_account = SubmissionAccount::try_from(submission)?;
+
+    if submission_account.source_chain_id.ne(&source_chain_id) {
+        msg!(
+            "Expected: {:?}, Actual: {:?}",
+            source_chain_id,
+            submission_account.source_chain_id
+        );
+        return Err(Error::WrongClaimParentNativeSender.into());
+    }
 
     if native_sender
         .as_ref()
