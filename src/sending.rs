@@ -7,6 +7,8 @@ use solana_program::{
     program_error::ProgramError,
 };
 
+use crate::{Error, DEBRIDGE_ID, SEND_DISCRIMINATOR};
+
 struct MetaTemplate {
     is_signer: bool,
     is_writable: bool,
@@ -122,16 +124,21 @@ pub struct SendIx {
     submission_params: Option<SendSubmissionParamsInput>,
     referral_code: Option<u32>,
 }
-const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
 
 pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramResult {
     if account_infos.len() < SEND_META_TEMPLATE.len() {
         return Err(ProgramError::NotEnoughAccountKeys);
     }
 
+    if account_infos[SEND_META_TEMPLATE.len() - 1]
+        .key
+        .ne(&DEBRIDGE_ID)
+    {
+        return Err(Error::WrongDebridgeProgram.into());
+    }
+
     let ix = Instruction {
-        //TODO: Need to check debridge id?
-        program_id: *account_infos[SEND_META_TEMPLATE.len() - 1].key,
+        program_id: *DEBRIDGE_ID,
         accounts: account_infos
             .iter()
             .take(SEND_META_TEMPLATE.len())

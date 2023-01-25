@@ -4,10 +4,9 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-//TODO: Fill it
-const DEBRIDGE_ID: Pubkey = Pubkey::new_from_array([0; 32]);
-const EXECUTE_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [0; 8];
-const SUBMISSION_ACCOUNT_DISCRIMINATOR: [u8; 8] = [0; 8];
+use crate::{
+    Error, DEBRIDGE_ID, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR, SUBMISSION_ACCOUNT_DISCRIMINATOR,
+};
 
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SubmissionAccount {
@@ -36,30 +35,6 @@ impl TryFrom<&AccountInfo<'_>> for SubmissionAccount {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(
-        "Wrong parent ix. This method must be called by debridge program in execute_external call"
-    )]
-    WrongClaimParentInstruction,
-    #[error("Wrong parent ix accounts. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentInstructionAccounts,
-    #[error("Wrong parent ix submission. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentSubmission,
-    #[error("Wrong parent debridge-submission authority. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentSubmissionAuth,
-    #[error("Wrong parent debridge-submission native sender. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentNativeSender,
-    #[error("Wrong parent debridge-submission source chain id. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentSourceChainId,
-    #[error("Wrong parent ix program id. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentProgramId,
-    #[error("Failed while submission account deserializing")]
-    SubmissionDeserializeError,
-    #[error("Provided submssion account with wrong discriminator")]
-    WrongSubmissionAccountDiscriminator,
-}
-
 impl From<Error> for ProgramError {
     fn from(e: Error) -> Self {
         ProgramError::Custom(e as u32)
@@ -80,10 +55,10 @@ pub fn check_execution_context(
         instructions,
     )?;
 
-    if current_ix.program_id != DEBRIDGE_ID {
+    if current_ix.program_id != *DEBRIDGE_ID {
         msg!(
             "Expected: {}, Actual: {}",
-            DEBRIDGE_ID,
+            *DEBRIDGE_ID,
             current_ix.program_id
         );
         return Err(Error::WrongClaimParentProgramId.into());
