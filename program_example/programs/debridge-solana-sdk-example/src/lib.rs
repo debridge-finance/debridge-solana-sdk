@@ -18,12 +18,14 @@ pub mod debridge_invoke_example {
 
     pub fn check_claiming(
         ctx: Context<CheckClaiming>,
+        source_chain_id: [u8;32],
         native_sender: Option<Vec<u8>>,
     ) -> Result<()> {
         check_execution_context(
             &ctx.accounts.instructions,
             &ctx.accounts.submission,
             &ctx.accounts.submission_authority,
+            source_chain_id,
             native_sender,
         )
         .map_err(|err| err.into())
@@ -31,7 +33,10 @@ pub mod debridge_invoke_example {
 }
 
 #[derive(Accounts)]
-pub struct SendViaDebridge {}
+pub struct SendViaDebridge<'info> {
+
+    submission: AccountInfo<'info>,
+}
 
 #[derive(Accounts)]
 pub struct CheckClaiming<'info> {

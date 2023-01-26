@@ -1,3 +1,11 @@
+[package]
+name = "sdk-example-root"
+version = "0.0.0"
+publish = false
+edition = "2021"
+resolver = "2"
+
+
 [workspace]
 members = [
     "programs/*",
@@ -8,7 +16,20 @@ members = [
 overflow-checks = true
 lto = "fat"
 codegen-units = 1
+
 [profile.release.build-override]
 opt-level = 3
 incremental = false
 codegen-units = 1
+
+[dev-dependencies]
+base58 = "0.2.0"
+thiserror = "1.0.38"
+rstest = "0.12.0"
+tokio = { version = "1.24.2", features = ["full"] }
+log = "0.4.17"
+solana-program = "1.10.41"
+solana-sdk = "1.10.41"
+simple_logger = "1.13.0"
+solana-client = "1.10.41"
+debridge-solana-sdk-example = { path = "programs/debridge-solana-sdk-example" }

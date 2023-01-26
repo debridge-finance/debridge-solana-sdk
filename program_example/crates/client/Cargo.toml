@@ -5,4 +5,4 @@ publish = false
 edition = "2021"
 
 [dependencies]
-debridge-invoke-example = { path = "../../programs/debridge-invoke-test", features = ["cpi", "no-entrypoint"] }
+debridge-solana-sdk-example = { path = "../../programs/debridge-solana-sdk-example", features = ["cpi", "no-entrypoint"] }

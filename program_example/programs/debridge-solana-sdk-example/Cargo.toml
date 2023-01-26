@@ -6,7 +6,8 @@ edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "debridge_invoke_test"
+name = "debridge_solana_sdk_example"
+doctest = false
 
 [features]
 no-entrypoint = []
