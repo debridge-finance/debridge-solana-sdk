@@ -115,16 +115,28 @@ pub struct SendSubmissionParamsInput {
     pub external_call_shortcut: [u8; 32],
 }
 
+/// Struct for forming send instruction in debridge program
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SendIx {
+    /// Chain id to which the tokens are sent
     pub target_chain_id: [u8; 32],
+    /// Address in `target_chain_id` that will receive the transferred tokens
     pub receiver: Vec<u8>,
+    /// Id of the network to which the tokens are sent
     pub is_use_asset_fee: bool,
+    /// Amount of sending tokens. From this amount fee will be taken
     pub amount: u64,
+    /// Additional data for tokens sending with auto external execution
     pub submission_params: Option<SendSubmissionParamsInput>,
+    /// Not used
     pub referral_code: Option<u32>,
 }
 
+/// Invoke send instruction in debridge program
+///
+/// # Arguments
+/// * `send_ix` - [`SendIx`] structure to send debridge instruction creation
+/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
 pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramResult {
     if account_infos.len() < SEND_META_TEMPLATE.len() {
         return Err(ProgramError::NotEnoughAccountKeys);

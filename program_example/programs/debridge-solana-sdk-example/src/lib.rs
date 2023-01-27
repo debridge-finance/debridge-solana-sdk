@@ -49,7 +49,11 @@ pub mod debridge_invoke_example {
     /// The default native fix fee amount is setted in state account but it can setted custom native
     /// fix amount for a specific chain in chain support info account.
     ///
+    /// To get default native fix fee amount use [`debridge_sdk::common::get_default_native_fix_fee`]
+    ///
     /// To get native fix fee amount for specific chain use [`debridge_sdk::common::get_chain_native_fix_fee`]
+    ///
+    /// To use native fix fee set [`debridge_sdk::sending::SendIx`] `is_use_asset_fee` field to `false`
     pub fn send_via_debridge_with_native_fixed_fee(
         ctx: Context<SendViaDebridge>,
         amount: u64,
@@ -59,7 +63,6 @@ pub mod debridge_invoke_example {
         let send_ix = SendIx {
             target_chain_id,
             receiver,
-            /// Set this parameter to [`false`] value to pay fix fees in native solana tokens
             is_use_asset_fee: false,
             amount,
             submission_params: None,
@@ -69,6 +72,16 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
+    /// Debridge protocol take fix fee and transfer fee while sending liqudity.
+    /// The fix fee by default is taken in native solana tokens.
+    /// But when transferring some tokens to certain networks, it is possible to pay in transferred tokens.
+    /// It's called `asset_fix_fee`.
+    ///
+    /// To known `asset_fee` is avaliable use [`debridge_sdk::common::is_asset_fee_avaliable`]
+    ///
+    /// To get asset fix fee amount for specific chain use [`debridge_sdk::common::try_get_chain_asset_fix_fee`]
+    ///
+    /// To use asset fix fee set [`debridge_sdk::sending::SendIx`] `is_use_asset_fee` field to `true`
     pub fn send_via_debridge_with_asset_fixed_fee(
         ctx: Context<SendViaDebridge>,
         amount: u64,
@@ -78,7 +91,6 @@ pub mod debridge_invoke_example {
         let send_ix = SendIx {
             target_chain_id,
             receiver,
-            /// Set this parameter to [`true`] value to pay fix fees in bridged tokens
             is_use_asset_fee: true,
             amount,
             submission_params: None,
@@ -87,6 +99,8 @@ pub mod debridge_invoke_example {
 
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
+
+
 
     pub fn check_claiming(
         ctx: Context<CheckClaiming>,
