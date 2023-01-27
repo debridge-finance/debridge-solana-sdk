@@ -4,6 +4,7 @@ use lazy_static::lazy_static;
 use solana_program::pubkey::Pubkey;
 
 pub mod check_claiming;
+pub mod common;
 pub mod sending;
 
 lazy_static! {

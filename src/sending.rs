@@ -117,12 +117,12 @@ pub struct SendSubmissionParamsInput {
 
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SendIx {
-    target_chain_id: [u8; 32],
-    receiver: Vec<u8>,
-    is_use_asset_fee: bool,
-    amount: u64,
-    submission_params: Option<SendSubmissionParamsInput>,
-    referral_code: Option<u32>,
+    pub target_chain_id: [u8; 32],
+    pub receiver: Vec<u8>,
+    pub is_use_asset_fee: bool,
+    pub amount: u64,
+    pub submission_params: Option<SendSubmissionParamsInput>,
+    pub referral_code: Option<u32>,
 }
 
 pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramResult {

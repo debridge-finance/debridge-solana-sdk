@@ -1,17 +1,18 @@
-use rstest::*;
-use solana_sdk::signature::Signer;
-use std::future::Future;
-use std::time::Instant;
-use std::time::Duration;
-use std::process::Stdio;
-use std::process;
-use std::env;
-use std::path::Path;
-use std::{io, fs};
-use solana_program::pubkey::Pubkey;
-use solana_client::nonblocking::rpc_client::RpcClient;
+use std::{
+    env, fs,
+    future::Future,
+    io,
+    path::Path,
+    process,
+    process::Stdio,
+    time::{Duration, Instant},
+};
+
 use base58::FromBase58;
-use solana_sdk::signer::keypair::Keypair;
+use rstest::*;
+use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_program::pubkey::Pubkey;
+use solana_sdk::{signature::Signer, signer::keypair::Keypair};
 
 pub const USER: &str =
     "52KnSH4Eu8AuL7SNdVohakJCij1WCaoNgbURKTHH2b7FCiBiRGCCCeyeXCX7beQSY9w6wdXoLomGmizFjV1FMwkP";
@@ -39,10 +40,7 @@ pub struct TestValidator {
 }
 
 impl TestValidator {
-    pub async fn new(
-        project_dir: &Path,
-        mint_to: Pubkey,
-    ) -> Result<Self, Error> {
+    pub async fn new(project_dir: &Path, mint_to: Pubkey) -> Result<Self, Error> {
         println!("Test1");
         simple_logger::SimpleLogger::new()
             .with_utc_timestamps()
@@ -56,7 +54,6 @@ impl TestValidator {
         log::debug!("Use target dir: {:?}", &target);
         let ledger_dir = target.join("test-validator");
         log::debug!("Use ledger dir: {:?}", &ledger_dir);
-
 
         if !ledger_dir.exists() {
             log::debug!("Create ledger dir for test validator: {:?}", &ledger_dir);
@@ -75,7 +72,6 @@ impl TestValidator {
             .arg(target.join("deploy/debridge_solana_sdk_example.so"))
             .arg("--account-dir")
             .arg("./debridge-snapshot/");
-
 
         log::debug!("Start {:?}", command);
         let mut process = command.spawn()?;
@@ -106,25 +102,17 @@ impl TestValidator {
 
 #[rstest]
 #[tokio::test]
-async fn send_via_debridge_test(
-
-) {
+async fn send_via_debridge_test() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("failed to get manifest directory");
     let work_dir = Path::new(&manifest_dir);
-    let user = Keypair::from_bytes(USER.from_base58().expect("Unreachable").as_slice()).expect("Unreachable");
-
+    let user = Keypair::from_bytes(USER.from_base58().expect("Unreachable").as_slice())
+        .expect("Unreachable");
 
     println!("Work dir: {:?}", work_dir);
 
-    let validator = TestValidator::new(
-        work_dir,
-        user.pubkey(),
-    ).await;
+    let validator = TestValidator::new(work_dir, user.pubkey()).await;
 
-    loop {
-
-    }
+    loop {}
 
     assert!(false);
-
 }
