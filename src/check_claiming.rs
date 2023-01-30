@@ -1,39 +1,11 @@
-use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey,
 };
 
 use crate::{
-    Error, DEBRIDGE_ID, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR, SUBMISSION_ACCOUNT_DISCRIMINATOR,
+    debridge_accounts::{SubmissionAccount, TryFromAccount},
+    Error, DEBRIDGE_ID, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR,
 };
-
-#[derive(BorshSerialize, BorshDeserialize)]
-pub struct SubmissionAccount {
-    pub claimer: Pubkey,
-    pub receiver: Pubkey,
-    pub fallback_address: Pubkey,
-    pub token_mint: Pubkey,
-    pub native_sender: Option<Vec<u8>>,
-    pub source_chain_id: [u8; 32],
-    pub bump: u8,
-}
-
-impl TryFrom<&AccountInfo<'_>> for SubmissionAccount {
-    type Error = ProgramError;
-
-    fn try_from(account_info: &AccountInfo) -> Result<Self, Self::Error> {
-        let borrow_data = account_info.try_borrow_data()?;
-        let (discriminator, data) = borrow_data.split_at(8);
-
-        if discriminator.ne(&SUBMISSION_ACCOUNT_DISCRIMINATOR) {
-            return Err(Error::WrongSubmissionAccountDiscriminator.into());
-        }
-
-        SubmissionAccount::try_from_slice(data)
-            .map_err(|_| Error::SubmissionDeserializeError.into())
-    }
-}
 
 impl From<Error> for ProgramError {
     fn from(e: Error) -> Self {
@@ -111,7 +83,7 @@ pub fn check_execution_context(
         )
     }
 
-    let submission_account = SubmissionAccount::try_from(submission)?;
+    let submission_account = SubmissionAccount::try_from_accounts(submission)?;
 
     if submission_account.source_chain_id.ne(&source_chain_id) {
         msg!(

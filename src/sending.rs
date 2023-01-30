@@ -7,8 +7,14 @@ use solana_program::{
     program_error::ProgramError,
 };
 
-use crate::{Error, DEBRIDGE_ID, SEND_DISCRIMINATOR};
+use crate::{
+    debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
+    Error, DEBRIDGE_ID, SEND_DISCRIMINATOR,
+};
 
+const CHAIN_SUPPORT_INFO_INDEX: usize = 4;
+const STATE_INDEX: usize = 7;
+const ASSET_FEE_INDEX: usize = 16;
 struct MetaTemplate {
     is_signer: bool,
     is_writable: bool,
@@ -95,7 +101,7 @@ const SEND_META_TEMPLATE: [MetaTemplate; 18] = [
         is_signer: false,
         is_writable: false,
     },
-    // Bridge fee
+    // Asset fee
     MetaTemplate {
         is_signer: false,
         is_writable: false,
@@ -211,4 +217,80 @@ mod tests {
             ]
         )
     }
+}
+
+pub fn get_state(remaining_accounts: &[AccountInfo]) -> Result<State, Error> {
+    get_account_by_index(remaining_accounts, STATE_INDEX)
+}
+
+pub fn get_chain_support_info(
+    remaining_accounts: &[AccountInfo],
+    _target_chain_id: [u8; 32],
+) -> Result<ChainSupportInfo, Error> {
+    get_account_by_index(remaining_accounts, CHAIN_SUPPORT_INFO_INDEX)
+}
+
+pub fn get_asset_fee_info(
+    remaining_accounts: &[AccountInfo],
+    _target_chain_id: [u8; 32],
+) -> Result<AssetFeeInfo, Error> {
+    get_account_by_index(remaining_accounts, ASSET_FEE_INDEX)
+}
+
+pub fn get_account_by_index<T: TryFromAccount<Error = Error>>(
+    remaining_accounts: &[AccountInfo],
+    account_index: usize,
+) -> Result<T, Error> {
+    if remaining_accounts.len() <= account_index {
+        return Err(Error::WrongAccountIndex);
+    }
+    T::try_from_accounts(&remaining_accounts[account_index]).map(Into::into)
+}
+
+pub fn is_chain_supported(
+    _target_chain_id: [u8; 32],
+    remaining_accounts: &[AccountInfo],
+) -> Result<bool, Error> {
+    Ok(
+        match get_chain_support_info(remaining_accounts, _target_chain_id)? {
+            ChainSupportInfo::Supported { .. } => true,
+            ChainSupportInfo::NotSupported => false,
+        },
+    )
+}
+
+pub fn get_chain_native_fix_fee(
+    _target_chain_id: [u8; 32],
+    reamining_accounts: &[AccountInfo],
+) -> Result<u64, Error> {
+    match get_chain_support_info(reamining_accounts, _target_chain_id)? {
+        ChainSupportInfo::NotSupported => get_default_native_fix_fee(reamining_accounts),
+        ChainSupportInfo::Supported { fixed_fee, .. } => fixed_fee
+            .map(Ok)
+            .unwrap_or_else(|| get_default_native_fix_fee(reamining_accounts)),
+    }
+}
+
+pub fn get_default_native_fix_fee(reamining_accounts: &[AccountInfo]) -> Result<u64, Error> {
+    Ok(get_state(reamining_accounts)?.global_fixed_fee)
+}
+
+pub fn is_asset_fee_avaliable(
+    target_chain_id: [u8; 32],
+    reamining_accounts: &[AccountInfo],
+) -> Result<bool, Error> {
+    match get_asset_fee_info(reamining_accounts, target_chain_id) {
+        Ok(asset_fee) => Ok(asset_fee.asset_chain_fee.is_some()),
+        Err(err) if err == Error::WrongAccountIndex => Err(err),
+        Err(_) => Ok(false),
+    }
+}
+
+pub fn try_get_chain_asset_fix_fee(
+    target_chain_id: [u8; 32],
+    reamining_accounts: &[AccountInfo],
+) -> Result<u64, Error> {
+    get_asset_fee_info(reamining_accounts, target_chain_id)?
+        .asset_chain_fee
+        .ok_or(Error::AssetFeeNotSupported)
 }

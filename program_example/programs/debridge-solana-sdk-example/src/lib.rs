@@ -3,7 +3,7 @@
 use anchor_lang::{prelude::*, solana_program::sysvar};
 use debridge_sdk::{
     check_claiming::check_execution_context,
-    common::{get_chain_native_fix_fee, is_chain_supported},
+    sending::{get_chain_native_fix_fee, is_chain_supported},
     sending::{invoke_debridge_send, SendIx},
 };
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
@@ -14,6 +14,7 @@ pub mod debridge_invoke_example {
     #[error_code]
     pub enum ErrorCode {
         ChainNotSupported,
+        ChainSupportInfoDeserializingFailed,
     }
 
     use super::*;
@@ -21,7 +22,7 @@ pub mod debridge_invoke_example {
     /// Debridge protocol allow transfer liqudity from Solana to other supported chains
     /// To send some token to other supported chain use [`debridge_sdk::sending::invoke_debridge_send`]
     ///
-    /// To check if the network is supported use [`debridge_sdk::common::is_chain_supported`]
+    /// To check if the network is supported use [`debridge_sdk::sending::is_chain_supported`]
     pub fn send_via_debridge(
         ctx: Context<SendViaDebridge>,
         amount: u64,
@@ -29,7 +30,13 @@ pub mod debridge_invoke_example {
         receiver: Vec<u8>,
         is_use_asset_fee: bool,
     ) -> Result<()> {
-        if !is_chain_supported(target_chain_id, ctx.remaining_accounts) {
+        if !is_chain_supported(target_chain_id, ctx.remaining_accounts).map_err(|err| {
+            msg!(
+                "Failed to deserialize chain support info account. Inner error: {}",
+                err
+            );
+            ErrorCode::ChainSupportInfoDeserializingFailed
+        })? {
             return Err(ErrorCode::ChainNotSupported.into());
         }
 
@@ -49,9 +56,9 @@ pub mod debridge_invoke_example {
     /// The default native fix fee amount is setted in state account but it can setted custom native
     /// fix amount for a specific chain in chain support info account.
     ///
-    /// To get default native fix fee amount use [`debridge_sdk::common::get_default_native_fix_fee`]
+    /// To get default native fix fee amount use [`debridge_sdk::sending::get_default_native_fix_fee`]
     ///
-    /// To get native fix fee amount for specific chain use [`debridge_sdk::common::get_chain_native_fix_fee`]
+    /// To get native fix fee amount for specific chain use [`debridge_sdk::sending::get_chain_native_fix_fee`]
     ///
     /// To use native fix fee set [`debridge_sdk::sending::SendIx`] `is_use_asset_fee` field to `false`
     pub fn send_via_debridge_with_native_fixed_fee(
@@ -77,9 +84,9 @@ pub mod debridge_invoke_example {
     /// But when transferring some tokens to certain networks, it is possible to pay in transferred tokens.
     /// It's called `asset_fix_fee`.
     ///
-    /// To known `asset_fee` is avaliable use [`debridge_sdk::common::is_asset_fee_avaliable`]
+    /// To known `asset_fee` is avaliable use [`debridge_sdk::sending::is_asset_fee_avaliable`]
     ///
-    /// To get asset fix fee amount for specific chain use [`debridge_sdk::common::try_get_chain_asset_fix_fee`]
+    /// To get asset fix fee amount for specific chain use [`debridge_sdk::sending::try_get_chain_asset_fix_fee`]
     ///
     /// To use asset fix fee set [`debridge_sdk::sending::SendIx`] `is_use_asset_fee` field to `true`
     pub fn send_via_debridge_with_asset_fixed_fee(
@@ -99,8 +106,6 @@ pub mod debridge_invoke_example {
 
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
-
-
 
     pub fn check_claiming(
         ctx: Context<CheckClaiming>,
