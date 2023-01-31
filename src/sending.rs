@@ -9,104 +9,112 @@ use solana_program::{
 
 use crate::{
     debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
-    Error, HashAdapter, BPS_DENOMINATOR, DEBRIDGE_ID, SEND_DISCRIMINATOR,
+    Error, HashAdapter, BPS_DENOMINATOR, DEBRIDGE_ID, INIT_EXTERNAL_CALL_DISCRIMINATOR,
+    SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
 };
 
 const CHAIN_SUPPORT_INFO_INDEX: usize = 4;
 const STATE_INDEX: usize = 7;
 const ASSET_FEE_INDEX: usize = 16;
+
+const EXTERNAL_CALL_STORAGE_INDEX: usize = 12;
+const EXTERNAL_CALL_META_INDEX: usize = 13;
+const SEND_FROM_INDEX: usize = 14;
+const SYSTEM_PROGRAM_INDEX: usize = 11;
+const DEBRIDGE_PROGRAM_INDEX: usize = 17;
+
 struct MetaTemplate {
     is_signer: bool,
     is_writable: bool,
 }
 
 const SEND_META_TEMPLATE: [MetaTemplate; 18] = [
-    // Bridge
+    // 0: Bridge
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // Token Mint
+    // 1: Token Mint
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // Staking wallet
+    // 2: Staking wallet
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // Mint authority
+    // 3: Mint authority
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    // Chain support info
+    // 4: Chain support info
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    // Settings program
+    // 5: Settings program
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    // Spl token program
+    // 6: Spl token program
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    // State
+    // 7: State
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // Fee beneficiary
+    // 8: Fee beneficiary
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // Nonce storage
+    // 9: Nonce storage
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // Send from wallet
+    // 10: Send from wallet
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // System program
+    // 11: System program
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    // External call storage
+    // 12: External call storage
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // External call meta
+    // 13: External call meta
     MetaTemplate {
         is_signer: false,
         is_writable: true,
     },
-    // Send from
+    // 14: Send from
     MetaTemplate {
         is_signer: true,
         is_writable: true,
     },
-    // Discount
+    // 15: Discount
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    // Asset fee
+    // 16: Asset fee
     MetaTemplate {
         is_signer: false,
         is_writable: false,
     },
-    // Debridge program
+    // 17: Debridge program
     MetaTemplate {
         is_signer: false,
         is_writable: false,
@@ -186,6 +194,81 @@ pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> P
     };
 
     invoke(&ix, account_infos)
+}
+
+/// Struct for forming send instruction in debridge program
+#[derive(BorshSerialize, BorshDeserialize)]
+pub struct InitExternalCallIx {
+    /// Len of external call array
+    pub external_call_len: u32,
+    /// Target chain id
+    pub chain_id: [u8; 32],
+    /// Keccak hash of external call
+    pub external_call_shortcut: [u8; 32],
+    /// Message that send and try to execute in target chain
+    pub external_call: Vec<u8>,
+}
+
+pub fn init_external_call(
+    external_call: &[u8],
+    account_infos: &[AccountInfo],
+) -> Result<[u8; 32], ProgramError> {
+    let external_call_shortcut = sha3::Keccak256::hash(external_call);
+
+    let external_call_storage = account_infos[EXTERNAL_CALL_STORAGE_INDEX].clone();
+    let external_call_meta = account_infos[EXTERNAL_CALL_META_INDEX].clone();
+    let send_from = account_infos[SEND_FROM_INDEX].clone();
+    let system_program = account_infos[SYSTEM_PROGRAM_INDEX].clone();
+    let debridge_program = account_infos[DEBRIDGE_PROGRAM_INDEX].clone();
+    let accounts = vec![
+        AccountMeta {
+            pubkey: *external_call_storage.key,
+            is_signer: false,
+            is_writable: true,
+        },
+        AccountMeta {
+            pubkey: *external_call_meta.key,
+            is_signer: false,
+            is_writable: true,
+        },
+        AccountMeta {
+            pubkey: *send_from.key,
+            is_signer: true,
+            is_writable: true,
+        },
+        AccountMeta {
+            pubkey: *system_program.key,
+            is_signer: false,
+            is_writable: false,
+        },
+    ];
+
+    invoke(
+        &Instruction::new_with_bytes(
+            *DEBRIDGE_ID,
+            &[
+                INIT_EXTERNAL_CALL_DISCRIMINATOR.as_slice(),
+                InitExternalCallIx {
+                    external_call_len: external_call.len() as u32,
+                    chain_id: SOLANA_CHAIN_ID,
+                    external_call_shortcut: sha3::Keccak256::hash(external_call),
+                    external_call: external_call.to_vec(),
+                }
+                .try_to_vec()?
+                .as_slice(),
+            ]
+            .concat(),
+            accounts,
+        ),
+        &[
+            external_call_storage,
+            external_call_meta,
+            send_from,
+            system_program,
+            debridge_program,
+        ],
+    )?;
+    Ok(external_call_shortcut)
 }
 
 #[cfg(test)]

@@ -19,7 +19,12 @@ lazy_static! {
 
 const EXECUTE_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [160, 89, 229, 51, 157, 62, 217, 174];
 const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
+const INIT_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [82, 77, 58, 138, 145, 157, 41, 253];
 
+pub const SOLANA_CHAIN_ID: [u8; 32] = [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115,
+    111, 108,
+];
 pub const BPS_DENOMINATOR: u64 = 10000_u64;
 
 #[derive(Debug, thiserror::Error, PartialEq)]

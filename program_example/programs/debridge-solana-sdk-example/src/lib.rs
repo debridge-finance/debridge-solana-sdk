@@ -188,6 +188,25 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
+    pub fn send_via_debridge_with_external_call(
+        ctx: Context<SendViaDebridge>,
+        amount: u64,
+        target_chain_id: [u8; 32],
+        receiver: Vec<u8>,
+        execution_fee: u64,
+    ) -> Result<()> {
+        let send_ix = SendIx {
+            target_chain_id,
+            receiver,
+            is_use_asset_fee: false,
+            amount,
+            submission_params: Some(SendSubmissionParamsInput::execution_fee_only(execution_fee)),
+            referral_code: None,
+        };
+
+        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+    }
+
     pub fn check_claiming(
         ctx: Context<CheckClaiming>,
         source_chain_id: [u8; 32],
