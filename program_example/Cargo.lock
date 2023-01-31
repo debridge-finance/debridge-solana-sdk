@@ -925,6 +925,7 @@ dependencies = [
  "borsh",
  "hex",
  "lazy_static",
+ "sha3 0.10.6",
  "solana-program",
  "thiserror",
 ]

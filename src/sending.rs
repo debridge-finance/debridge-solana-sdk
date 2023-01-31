@@ -9,7 +9,7 @@ use solana_program::{
 
 use crate::{
     debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
-    Error, DEBRIDGE_ID, SEND_DISCRIMINATOR,
+    Error, HashAdapter, BPS_DENOMINATOR, DEBRIDGE_ID, SEND_DISCRIMINATOR,
 };
 
 const CHAIN_SUPPORT_INFO_INDEX: usize = 4;
@@ -115,10 +115,21 @@ const SEND_META_TEMPLATE: [MetaTemplate; 18] = [
 
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SendSubmissionParamsInput {
-    pub execution_fee: u64,
-    pub reserved_flag: [u8; 32],
-    pub fallback_address: Vec<u8>,
-    pub external_call_shortcut: [u8; 32],
+    execution_fee: u64,
+    reserved_flag: [u8; 32],
+    fallback_address: Vec<u8>,
+    external_call_shortcut: [u8; 32],
+}
+
+impl SendSubmissionParamsInput {
+    pub fn execution_fee_only(execution_fee: u64) -> Self {
+        SendSubmissionParamsInput {
+            execution_fee,
+            reserved_flag: [0; 32],
+            fallback_address: vec![0; 20],
+            external_call_shortcut: sha3::Keccak256::hash(&[]),
+        }
+    }
 }
 
 /// Struct for forming send instruction in debridge program
@@ -248,8 +259,8 @@ pub fn get_account_by_index<T: TryFromAccount<Error = Error>>(
 }
 
 pub fn is_chain_supported(
-    _target_chain_id: [u8; 32],
     remaining_accounts: &[AccountInfo],
+    _target_chain_id: [u8; 32],
 ) -> Result<bool, Error> {
     Ok(
         match get_chain_support_info(remaining_accounts, _target_chain_id)? {
@@ -259,9 +270,60 @@ pub fn is_chain_supported(
     )
 }
 
-pub fn get_chain_native_fix_fee(
+pub fn get_transfer_fee(
+    _remaining_accoutns: &[AccountInfo],
     _target_chain_id: [u8; 32],
+) -> Result<u64, Error> {
+    todo!()
+}
+
+const OVERFLOW_ERR: Error = Error::AmountOverflowedWhileAddingFee;
+pub fn add_all_fees(
+    remaining_accounts: &[AccountInfo],
+    target_chain_id: [u8; 32],
+    amount: u64,
+    execution_fee: u64,
+    is_use_asset_fee: bool,
+) -> Result<u64, Error> {
+    add_transfer_fee(
+        remaining_accounts,
+        target_chain_id,
+        amount
+            .checked_add(execution_fee)
+            .ok_or(OVERFLOW_ERR)?
+            .checked_add(
+                is_use_asset_fee
+                    .then(|| try_get_chain_asset_fix_fee(remaining_accounts, target_chain_id))
+                    .transpose()?
+                    .unwrap_or(0),
+            )
+            .ok_or(OVERFLOW_ERR)?,
+    )
+}
+
+pub fn add_transfer_fee(
+    remaining_accoutns: &[AccountInfo],
+    target_chain_id: [u8; 32],
+    amount: u64,
+) -> Result<u64, Error> {
+    let transfer_fee_bps = get_transfer_fee(remaining_accoutns, target_chain_id)?;
+
+    u128::from(amount)
+        .checked_mul(u128::from(BPS_DENOMINATOR))
+        .ok_or(OVERFLOW_ERR)?
+        .checked_div(u128::from(
+            BPS_DENOMINATOR
+                .checked_sub(transfer_fee_bps)
+                .ok_or(OVERFLOW_ERR)?,
+        ))
+        .ok_or(OVERFLOW_ERR)?
+        .try_into()
+        .map_err(|_| OVERFLOW_ERR)
+}
+
+pub fn get_chain_native_fix_fee(
     reamining_accounts: &[AccountInfo],
+    _target_chain_id: [u8; 32],
 ) -> Result<u64, Error> {
     match get_chain_support_info(reamining_accounts, _target_chain_id)? {
         ChainSupportInfo::NotSupported => get_default_native_fix_fee(reamining_accounts),
@@ -276,8 +338,8 @@ pub fn get_default_native_fix_fee(reamining_accounts: &[AccountInfo]) -> Result<
 }
 
 pub fn is_asset_fee_avaliable(
-    target_chain_id: [u8; 32],
     reamining_accounts: &[AccountInfo],
+    target_chain_id: [u8; 32],
 ) -> Result<bool, Error> {
     match get_asset_fee_info(reamining_accounts, target_chain_id) {
         Ok(asset_fee) => Ok(asset_fee.asset_chain_fee.is_some()),
@@ -287,8 +349,8 @@ pub fn is_asset_fee_avaliable(
 }
 
 pub fn try_get_chain_asset_fix_fee(
-    target_chain_id: [u8; 32],
     reamining_accounts: &[AccountInfo],
+    target_chain_id: [u8; 32],
 ) -> Result<u64, Error> {
     get_asset_fee_info(reamining_accounts, target_chain_id)?
         .asset_chain_fee

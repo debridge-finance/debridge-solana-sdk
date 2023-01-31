@@ -20,6 +20,8 @@ lazy_static! {
 const EXECUTE_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [160, 89, 229, 51, 157, 62, 217, 174];
 const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
 
+pub const BPS_DENOMINATOR: u64 = 10000_u64;
+
 #[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
     #[error(
@@ -52,4 +54,17 @@ pub enum Error {
     AccountBorrowFailing,
     #[error("Asset fee not supported")]
     AssetFeeNotSupported,
+    #[error("Amount too big for sending. Adding fee overflow max sending amount")]
+    AmountOverflowedWhileAddingFee,
+}
+
+pub trait HashAdapter {
+    fn hash(input: &[u8]) -> [u8; 32];
+}
+
+impl HashAdapter for sha3::Keccak256 {
+    fn hash(input: &[u8]) -> [u8; 32] {
+        use sha3::Digest;
+        Self::digest(input).as_slice().try_into().unwrap()
+    }
 }
