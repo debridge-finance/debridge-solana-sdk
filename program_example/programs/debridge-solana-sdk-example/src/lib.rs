@@ -288,6 +288,17 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
+    /// Debridge protocol allows to execute some Solana instructions from evm-like chains.
+    /// Execution occurs using the debridge's `execute_external_call` instruction .
+    /// The `execute_external_call` instruction invokes provided from evm instruction
+    /// stored and verified in external_call_storage with Solana Cross-Program Invocations and
+    /// [`anchor_lang::solana_program::program::invoke_signed`] function. Often there is a task to check
+    /// that the program instruction is called from the `execute_external_call` instruction by
+    /// [`anchor_lang::solana_program::program::invoke_signed`]. For this tast you can use
+    /// [`debridge_sdk::check_claiming::check_execution_context`] function. For it you need to
+    /// provide `submission` and `submission_authority` accounts and `source_chain_id`. Also you
+    /// can check `native_sender`. It's user who call send function in source chain. With this
+    /// function you can let two contracts communicate with each other.
     pub fn check_claiming(
         ctx: Context<CheckClaiming>,
         source_chain_id: [u8; 32],

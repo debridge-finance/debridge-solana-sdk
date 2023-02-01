@@ -1,10 +1,13 @@
+use std::str::FromStr;
+
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    pubkey::Pubkey,
 };
 
 use crate::{
     debridge_accounts::{SubmissionAccount, TryFromAccount},
-    Error, DEBRIDGE_ID, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR,
+    Error, DEBRIDGE_ID_RAW, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR,
 };
 
 impl From<Error> for ProgramError {
@@ -13,6 +16,16 @@ impl From<Error> for ProgramError {
     }
 }
 
+/// Check that current instruction is called with [`solana_program::program::invoke_signed`]
+/// function during Debridge's `execute_external_call` instruciton call.
+/// Also this function can check `native_sender` (user who call send function in source chain).
+///
+/// # Arguments
+/// * `instructions` - [`solana_program::sysvar::instructions::ID`] account for previus instruction checking
+/// * `submission` - Debridge account contains submission claiming information
+/// * `submission_authority` - Debridge authority with sign proof invoking from `execute_external_call` instruciton  
+/// * `source_chain_id` - the source chain from which the send was made
+/// * `native_sender` - initiator address of Debridge Send function call in source chain
 pub fn check_execution_context(
     instructions: &AccountInfo,
     submission: &AccountInfo,
@@ -27,10 +40,10 @@ pub fn check_execution_context(
         instructions,
     )?;
 
-    if current_ix.program_id != *DEBRIDGE_ID {
+    if current_ix.program_id != Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap() {
         msg!(
             "Expected: {}, Actual: {}",
-            *DEBRIDGE_ID,
+            DEBRIDGE_ID_RAW,
             current_ix.program_id
         );
         return Err(Error::WrongClaimParentProgramId.into());
