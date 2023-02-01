@@ -1,14 +1,15 @@
 use std::{
-    env, fs,
-    future::Future,
-    io,
+    env, fs, io,
     path::Path,
     process,
     process::Stdio,
+    str::FromStr,
     time::{Duration, Instant},
 };
 
 use base58::FromBase58;
+use borsh::de::BorshDeserialize;
+use debridge_sdk::debridge_accounts::{ChainSupportInfo, Discriminator};
 use rstest::*;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_program::pubkey::Pubkey;
@@ -61,7 +62,7 @@ impl TestValidator {
         }
 
         let mut command = process::Command::new("solana-test-validator");
-        let mut command = command
+        let command = command
             .stdout(Stdio::null())
             .arg("--ledger")
             .arg(ledger_dir)
@@ -110,9 +111,29 @@ async fn send_via_debridge_test() {
 
     println!("Work dir: {:?}", work_dir);
 
-    let validator = TestValidator::new(work_dir, user.pubkey()).await;
+    let _validator = TestValidator::new(work_dir, user.pubkey()).await;
 
     loop {}
 
     assert!(false);
+}
+
+#[rstest]
+#[tokio::test]
+async fn chain_support_info_test() {
+    let chain_support_info =
+        Pubkey::from_str("8L81QZBfwA6Xi9zd49fyUfMRWJBCAxiUxd6jGHPnu1BQ").unwrap();
+    let client = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+
+    let account = client.get_account(&chain_support_info).await.unwrap();
+
+    let borrow_data = account.data;
+    let (discriminator, mut data) = borrow_data.split_at(8);
+
+    if discriminator.ne(&ChainSupportInfo::discriminator()) {
+        panic!("wront dis");
+    }
+
+    println!("DATA: {:?}", data);
+    let _csi = ChainSupportInfo::deserialize(&mut data).unwrap();
 }

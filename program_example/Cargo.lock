@@ -927,6 +927,7 @@ dependencies = [
  "lazy_static",
  "sha3 0.10.6",
  "solana-program",
+ "solana-sdk",
  "thiserror",
 ]
 
@@ -2679,6 +2680,8 @@ name = "sdk-example-root"
 version = "0.0.0"
 dependencies = [
  "base58",
+ "borsh",
+ "debridge-sdk",
  "debridge-solana-sdk-example",
  "log",
  "rstest",

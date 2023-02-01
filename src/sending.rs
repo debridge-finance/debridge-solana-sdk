@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo,
@@ -9,7 +11,7 @@ use solana_program::{
 
 use crate::{
     debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
-    Error, HashAdapter, BPS_DENOMINATOR, DEBRIDGE_ID, INIT_EXTERNAL_CALL_DISCRIMINATOR,
+    Error, HashAdapter, Pubkey, BPS_DENOMINATOR, DEBRIDGE_ID_RAW, INIT_EXTERNAL_CALL_DISCRIMINATOR,
     SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
 };
 
@@ -123,10 +125,10 @@ const SEND_META_TEMPLATE: [MetaTemplate; 18] = [
 
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SendSubmissionParamsInput {
-    execution_fee: u64,
-    reserved_flag: [u8; 32],
-    fallback_address: Vec<u8>,
-    external_call_shortcut: [u8; 32],
+    pub execution_fee: u64,
+    pub reserved_flag: [u8; 32],
+    pub fallback_address: Vec<u8>,
+    pub external_call_shortcut: [u8; 32],
 }
 
 impl SendSubmissionParamsInput {
@@ -136,6 +138,19 @@ impl SendSubmissionParamsInput {
             reserved_flag: [0; 32],
             fallback_address: vec![0; 20],
             external_call_shortcut: sha3::Keccak256::hash(&[]),
+        }
+    }
+
+    pub fn with_external_call(
+        external_call: Vec<u8>,
+        execution_fee: u64,
+        fallback_address: Vec<u8>,
+    ) -> Self {
+        SendSubmissionParamsInput {
+            execution_fee,
+            reserved_flag: [0; 32],
+            fallback_address,
+            external_call_shortcut: sha3::Keccak256::hash(external_call.as_slice()),
         }
     }
 }
@@ -169,13 +184,13 @@ pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> P
 
     if account_infos[SEND_META_TEMPLATE.len() - 1]
         .key
-        .ne(&DEBRIDGE_ID)
+        .ne(&Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap())
     {
         return Err(Error::WrongDebridgeProgram.into());
     }
 
     let ix = Instruction {
-        program_id: *DEBRIDGE_ID,
+        program_id: Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap(),
         accounts: account_infos
             .iter()
             .take(SEND_META_TEMPLATE.len())
@@ -209,7 +224,7 @@ pub struct InitExternalCallIx {
     pub external_call: Vec<u8>,
 }
 
-pub fn init_external_call(
+pub fn invoke_init_external_call(
     external_call: &[u8],
     account_infos: &[AccountInfo],
 ) -> Result<[u8; 32], ProgramError> {
@@ -245,7 +260,7 @@ pub fn init_external_call(
 
     invoke(
         &Instruction::new_with_bytes(
-            *DEBRIDGE_ID,
+            Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap(),
             &[
                 INIT_EXTERNAL_CALL_DISCRIMINATOR.as_slice(),
                 InitExternalCallIx {
@@ -338,7 +353,7 @@ pub fn get_account_by_index<T: TryFromAccount<Error = Error>>(
     if remaining_accounts.len() <= account_index {
         return Err(Error::WrongAccountIndex);
     }
-    T::try_from_accounts(&remaining_accounts[account_index]).map(Into::into)
+    T::try_from_accounts(&remaining_accounts[account_index])
 }
 
 pub fn is_chain_supported(

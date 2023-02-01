@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-debridge-solana-sdk-example = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+debridge-solana-sdk-example = "5UaXbex7paiRDykrN2GaRPW7j7goEQ1ZWqQvUwnAfFTF"
 
 [registry]
 url = "https://api.apr.dev"

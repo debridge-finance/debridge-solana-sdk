@@ -1,22 +1,14 @@
 extern crate core;
 
-use std::{env, str::FromStr};
+use std::env;
 
-use lazy_static::lazy_static;
 use solana_program::pubkey::Pubkey;
 
 pub mod check_claiming;
 pub mod debridge_accounts;
 pub mod sending;
 
-lazy_static! {
-    pub static ref DEBRIDGE_ID: Pubkey =
-        Pubkey::from_str(
-            env!("DEBRIDGE_PROGRAM_PUBKEY")
-        )
-        .expect("Failed to parse debridge program id. Please set in DEBRIDGE_PROGRAM_PUBKEY debridge prorgam id in base58 encoding");
-}
-
+const DEBRIDGE_ID_RAW: &str = env!("DEBRIDGE_PROGRAM_PUBKEY");
 const EXECUTE_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [160, 89, 229, 51, 157, 62, 217, 174];
 const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
 const INIT_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [82, 77, 58, 138, 145, 157, 41, 253];

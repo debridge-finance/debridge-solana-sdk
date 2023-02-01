@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 solana-program = "1.10.41"
+solana-sdk = "1.10.41"
 borsh = "0.9.1"
 hex = "0.4.3"
 thiserror = "1.0.30"

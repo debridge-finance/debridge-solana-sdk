@@ -22,13 +22,13 @@ impl<ACCOUNT: Discriminator + Sized + BorshSerialize + BorshDeserialize> TryFrom
         let borrow_data = account_info
             .try_borrow_data()
             .map_err(|_| Error::AccountBorrowFailing)?;
-        let (discriminator, data) = borrow_data.split_at(8);
+        let (discriminator, mut data) = borrow_data.split_at(8);
 
         if discriminator.ne(&Self::discriminator()) {
             return Err(Error::WrongAccountDiscriminator);
         }
 
-        Self::try_from_slice(data).map_err(|_| Error::AccountDeserializeError)
+        Self::deserialize(&mut data).map_err(|_| Error::AccountDeserializeError)
     }
 }
 

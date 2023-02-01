@@ -33,3 +33,5 @@ solana-sdk = "1.10.41"
 simple_logger = "1.13.0"
 solana-client = "1.10.41"
 debridge-solana-sdk-example = { path = "programs/debridge-solana-sdk-example" }
+debridge-sdk = {path = "../"}
+borsh = "0.9.1"

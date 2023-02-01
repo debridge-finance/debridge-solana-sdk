@@ -1,17 +1,13 @@
 #![allow(clippy::result_large_err)]
 
-use anchor_lang::{prelude::*, solana_program::sysvar};
-use debridge_sdk::sending::SendSubmissionParamsInput;
+use anchor_lang::{error::Error as AnchorError, prelude::*, solana_program::sysvar};
 use debridge_sdk::{
     check_claiming::check_execution_context,
     sending::{
-        add_all_fees, add_transfer_fee, get_chain_native_fix_fee, get_transfer_fee,
-        is_chain_supported, try_get_chain_asset_fix_fee,
+        add_all_fees, invoke_debridge_send, is_chain_supported, SendIx, SendSubmissionParamsInput,
     },
-    sending::{invoke_debridge_send, SendIx},
-    BPS_DENOMINATOR,
 };
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("5UaXbex7paiRDykrN2GaRPW7j7goEQ1ZWqQvUwnAfFTF");
 
 #[program]
 pub mod debridge_invoke_example {
@@ -24,11 +20,11 @@ pub mod debridge_invoke_example {
         FailedToCalculateAmountWithFee,
     }
 
-    use super::*;
-    use debridge_sdk::debridge_accounts::SubmissionAccount;
-    use debridge_sdk::sending::get_asset_fee_info;
+    use debridge_sdk::sending::invoke_init_external_call;
 
-    /// Debridge protocol allow transfer liqudity from Solana to other supported chains
+    use super::*;
+
+    /// Debridge protocol allows transfer liqudity from Solana to other supported chains
     /// To send some token to other supported chain use [`debridge_sdk::sending::invoke_debridge_send`]
     ///
     /// To check if the network is supported use [`debridge_sdk::sending::is_chain_supported`]
@@ -60,7 +56,7 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
-    /// Debridge protocol take fix fee and transfer fee while sending liqudity.
+    /// Debridge protocol takes fix fee and transfer fee while sending liqudity.
     /// The fix fee by default is taken in native solana tokens.
     /// The default native fix fee amount is setted in state account but it can setted custom native
     /// fix amount for a specific chain in chain support info account.
@@ -88,7 +84,7 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
-    /// Debridge protocol take fix fee and transfer fee while sending liqudity.
+    /// Debridge protocol takes fix fee and transfer fee while sending liqudity.
     /// The fix fee by default is taken in native solana tokens.
     /// But when transferring some tokens to certain networks, it is possible to pay in transferred tokens.
     /// It's called `asset_fix_fee`.
@@ -116,7 +112,7 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
-    /// Debridge protocol take fix fee and transfer fee while sending liqudity.
+    /// Debridge protocol takes fix fee and transfer fee while sending liqudity.
     /// If needed to get exact amount tokens in target chain, all fees will need to be added to sending amount.
     ///
     /// There are three types of fees in Debridge protocol: fixed fee, transfer fee, execution fee.
@@ -164,7 +160,7 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
-    /// Debridge protocol allow to anyone execute claim transaction in target chain. It allow to create
+    /// Debridge protocol allows to anyone execute claim transaction in target chain. It allow to create
     /// fluent user experience when user only send tokens to other chain and automatically receives in another.
     ///
     /// User adds execution fee as reward for execution his claim transaction in target chain.
@@ -188,19 +184,104 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
+    /// Debridge protocol allows not only to send tokens to another network,
+    /// but also to use them to call any smart contract.
+    ///
+    /// Used `external_call` for this. For evm-like network it will be address of smart contract function and function's arguments
+    /// packed in byte vector.
+    ///
+    /// To use external call function needed to initialize external call storage with
+    /// [`debridge_sdk::sending::invoke_init_external_call`] function and create `submission_params`
+    /// with [`debridge_sdk::sending::SendSubmissionParamsInput::with_external_call`] function.
+    /// Besides external call needed to provide `fallback_address`. The `fallback_address' will be used
+    /// if external call fails. On this address token received in target chain will transfer.
+    ///
+    /// A `execution_fee` is reward reward that will received for execution claim transaction in
+    /// target chain. It can be set zero if external call will be claimed by youself.
     pub fn send_via_debridge_with_external_call(
         ctx: Context<SendViaDebridge>,
         amount: u64,
         target_chain_id: [u8; 32],
         receiver: Vec<u8>,
         execution_fee: u64,
+        fallback_address: Vec<u8>,
     ) -> Result<()> {
+        //TODO: Add real external call
+        let external_call = vec![];
+
+        invoke_init_external_call(external_call.as_slice(), ctx.remaining_accounts)
+            .map_err(AnchorError::from)?;
+
         let send_ix = SendIx {
             target_chain_id,
             receiver,
             is_use_asset_fee: false,
             amount,
-            submission_params: Some(SendSubmissionParamsInput::execution_fee_only(execution_fee)),
+            submission_params: Some(SendSubmissionParamsInput::with_external_call(
+                external_call,
+                execution_fee,
+                fallback_address,
+            )),
+            referral_code: None,
+        };
+
+        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+    }
+
+    /// Debridge protocol allows call any smart contract in target chain without sending any tokens.
+    /// You have to payed transfer fee for transfering execution fee in target chain.
+    /// If you will claim by yourself then set execution fee to zero and don't pay transfer fee.
+    /// Only fixed fee will be payed.
+    ///
+    /// To take into account the transfer fee use the [`debridge_sdk::sending::add_all_fees`] functions
+    /// and provide zero amount and preferred execution fee and provide function's result
+    /// as `amount` parameter to [`debridge_sdk::sending::SendIx`].
+    ///
+    /// Used `external_call` for this. For evm-like network it will be address of smart contract function and function's arguments
+    /// packed in byte vector.
+    ///
+    /// To use external call function needed to initialize external call storage with
+    /// [`debridge_sdk::sending::invoke_init_external_call`] function and create `submission_params`
+    /// with [`debridge_sdk::sending::SendSubmissionParamsInput::with_external_call`] function.
+    /// Besides external call needed to provide `fallback_address`. The `fallback_address' will be used
+    /// if external call fails. On this address token received in target chain will transfer.
+    ///
+    /// A `execution_fee` is reward reward that will received for execution claim transaction in
+    /// target chain. It can be set zero if external call will be claimed by youself.
+    pub fn send_via_debridge_with_message_only(
+        ctx: Context<SendViaDebridge>,
+        target_chain_id: [u8; 32],
+        receiver: Vec<u8>,
+        execution_fee: u64,
+        is_use_asset_fee: bool,
+        fallback_address: Vec<u8>,
+    ) -> Result<()> {
+        //TODO: Add real external call
+        let external_call = vec![];
+
+        invoke_init_external_call(external_call.as_slice(), ctx.remaining_accounts)
+            .map_err(AnchorError::from)?;
+
+        let send_ix = SendIx {
+            target_chain_id,
+            receiver,
+            is_use_asset_fee,
+            amount: add_all_fees(
+                ctx.remaining_accounts,
+                target_chain_id,
+                0,
+                execution_fee,
+                is_use_asset_fee,
+            )
+            .map_err(|err| {
+                msg!("Failed to add fees to amount. Inner error: {}", err);
+                ErrorCode::FailedToCalculateAmountWithFee
+            })?,
+            submission_params: Some(SendSubmissionParamsInput::with_external_call(
+                external_call,
+                execution_fee,
+                fallback_address,
+            )),
             referral_code: None,
         };
 
