@@ -4,7 +4,8 @@ use anchor_lang::{error::Error as AnchorError, prelude::*, solana_program::sysva
 use debridge_sdk::{
     check_claiming::check_execution_context,
     sending::{
-        add_all_fees, invoke_debridge_send, is_chain_supported, SendIx, SendSubmissionParamsInput,
+        add_all_fees, invoke_debridge_send, invoke_send_message, is_chain_supported, SendIx,
+        SendSubmissionParamsInput,
     },
 };
 declare_id!("5UaXbex7paiRDykrN2GaRPW7j7goEQ1ZWqQvUwnAfFTF");
@@ -205,10 +206,8 @@ pub mod debridge_invoke_example {
         receiver: Vec<u8>,
         execution_fee: u64,
         fallback_address: Vec<u8>,
+        external_call: Vec<u8>,
     ) -> Result<()> {
-        //TODO: Add real external call
-        let external_call = vec![];
-
         invoke_init_external_call(external_call.as_slice(), ctx.remaining_accounts)
             .map_err(AnchorError::from)?;
 
@@ -233,59 +232,34 @@ pub mod debridge_invoke_example {
     /// If you will claim by yourself then set execution fee to zero and don't pay transfer fee.
     /// Only fixed fee will be payed.
     ///
-    /// To take into account the transfer fee use the [`debridge_sdk::sending::add_all_fees`] functions
-    /// and provide zero amount and preferred execution fee and provide function's result
-    /// as `amount` parameter to [`debridge_sdk::sending::SendIx`].
+    /// Used `external_call` for this. For evm-like network it will be address of smart contract
+    /// function and function's arguments packed in byte vector.
     ///
-    /// Used `external_call` for this. For evm-like network it will be address of smart contract function and function's arguments
-    /// packed in byte vector.
-    ///
-    /// To use external call function needed to initialize external call storage with
-    /// [`debridge_sdk::sending::invoke_init_external_call`] function and create `submission_params`
-    /// with [`debridge_sdk::sending::SendSubmissionParamsInput::with_external_call`] function.
+    /// To send message with external call function use [`debridge_sdk::sending::invoke_send_message`]
+    /// function. This function will create external call storage, calculate transfer fee for
+    /// transfering execution fee and send the message to target chain.
     /// Besides external call needed to provide `fallback_address`. The `fallback_address' will be used
     /// if external call fails. On this address token received in target chain will transfer.
     ///
     /// A `execution_fee` is reward reward that will received for execution claim transaction in
     /// target chain. It can be set zero if external call will be claimed by youself.
-    pub fn send_via_debridge_with_message_only(
+    pub fn send_message_via_debridge(
         ctx: Context<SendViaDebridge>,
         target_chain_id: [u8; 32],
         receiver: Vec<u8>,
         execution_fee: u64,
-        is_use_asset_fee: bool,
         fallback_address: Vec<u8>,
+        external_call: Vec<u8>,
     ) -> Result<()> {
-        //TODO: Add real external call
-        let external_call = vec![];
-
-        invoke_init_external_call(external_call.as_slice(), ctx.remaining_accounts)
-            .map_err(AnchorError::from)?;
-
-        let send_ix = SendIx {
+        invoke_send_message(
+            external_call,
             target_chain_id,
             receiver,
-            is_use_asset_fee,
-            amount: add_all_fees(
-                ctx.remaining_accounts,
-                target_chain_id,
-                0,
-                execution_fee,
-                is_use_asset_fee,
-            )
-            .map_err(|err| {
-                msg!("Failed to add fees to amount. Inner error: {}", err);
-                ErrorCode::FailedToCalculateAmountWithFee
-            })?,
-            submission_params: Some(SendSubmissionParamsInput::with_external_call(
-                external_call,
-                execution_fee,
-                fallback_address,
-            )),
-            referral_code: None,
-        };
-
-        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+            execution_fee,
+            fallback_address,
+            ctx.remaining_accounts,
+        )
+        .map_err(|err| err.into())
     }
 
     /// Debridge protocol allows to execute some Solana instructions from evm-like chains.

@@ -6,9 +6,12 @@ use solana_program::pubkey::Pubkey;
 
 pub mod check_claiming;
 pub mod debridge_accounts;
+pub mod keys;
 pub mod sending;
 
+//TODO: Create pubkey with procedure macros
 const DEBRIDGE_ID_RAW: &str = env!("DEBRIDGE_PROGRAM_PUBKEY");
+const SETTINGS_ID_RAW: &str = env!("SETTINGS_PROGRAM_PUBKEY");
 const EXECUTE_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [160, 89, 229, 51, 157, 62, 217, 174];
 const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
 const INIT_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [82, 77, 58, 138, 145, 157, 41, 253];
@@ -45,6 +48,8 @@ pub enum Error {
     WrongDebridgeProgram,
     #[error("Account with such index not exist. Please create account list with debridge sdk")]
     WrongAccountIndex,
+    #[error("Provided ChainSupportInfo for other target chain id. Please create account list with debridge sdk")]
+    WrongChainSupportInfo,
     #[error("Failed to find state account in provided accounts. Please create account list with debridge sdk")]
     WrongState,
     #[error("Failed to borrow account data")]
@@ -53,6 +58,8 @@ pub enum Error {
     AssetFeeNotSupported,
     #[error("Amount too big for sending. Adding fee overflow max sending amount")]
     AmountOverflowedWhileAddingFee,
+    #[error("Wrong ")]
+    WrongSettingProgramId,
 }
 
 pub trait HashAdapter {

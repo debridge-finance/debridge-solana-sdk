@@ -9,7 +9,7 @@ use std::{
 
 use base58::FromBase58;
 use borsh::de::BorshDeserialize;
-use debridge_sdk::debridge_accounts::{ChainSupportInfo, Discriminator};
+use debridge_sdk::debridge_accounts::ChainSupportInfo;
 use rstest::*;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_program::pubkey::Pubkey;
@@ -116,24 +116,4 @@ async fn send_via_debridge_test() {
     loop {}
 
     assert!(false);
-}
-
-#[rstest]
-#[tokio::test]
-async fn chain_support_info_test() {
-    let chain_support_info =
-        Pubkey::from_str("8L81QZBfwA6Xi9zd49fyUfMRWJBCAxiUxd6jGHPnu1BQ").unwrap();
-    let client = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
-
-    let account = client.get_account(&chain_support_info).await.unwrap();
-
-    let borrow_data = account.data;
-    let (discriminator, mut data) = borrow_data.split_at(8);
-
-    if discriminator.ne(&ChainSupportInfo::discriminator()) {
-        panic!("wront dis");
-    }
-
-    println!("DATA: {:?}", data);
-    let _csi = ChainSupportInfo::deserialize(&mut data).unwrap();
 }

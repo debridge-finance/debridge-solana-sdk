@@ -3,7 +3,7 @@ use solana_program::account_info::AccountInfo;
 
 use crate::{Error, Pubkey};
 
-pub trait Discriminator {
+trait Discriminator {
     fn discriminator() -> [u8; 8];
 }
 
@@ -53,7 +53,7 @@ impl Discriminator for SubmissionAccount {
 /// Internal information about chain support and commissions within it
 /// # Variants
 /// * [`ChainSupportInfoVariant::NotSupported`] - this chain not supported
-/// * [`ChainSupportInfoVariant::Supported] - this chain supported and we have `fixed_fee` & `transfer_fee` values for it
+/// * [`ChainSupportInfoVariant::Supported`] - this chain supported and we have `fixed_fee` & `transfer_fee` values for it
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub enum ChainSupportInfo {
     NotSupported,
@@ -65,6 +65,10 @@ pub enum ChainSupportInfo {
         /// Length of address in this chain
         chain_address_len: u16,
     },
+}
+
+impl ChainSupportInfo {
+    pub const SEED: &'static [u8] = b"CHAIN_SUPPORT_INFO";
 }
 
 const CHAIN_SUPPORT_INFO_ACCOUNT_DISCRIMINATOR: [u8; 8] = [175, 59, 40, 127, 55, 33, 200, 203];
