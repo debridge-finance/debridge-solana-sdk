@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use crate::keys::ChainSupportInfoPubkey;
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo,
@@ -12,6 +11,7 @@ use solana_program::{
 
 use crate::{
     debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
+    keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
     Error, HashAdapter, Pubkey, BPS_DENOMINATOR, DEBRIDGE_ID_RAW, INIT_EXTERNAL_CALL_DISCRIMINATOR,
     SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
 };
@@ -224,7 +224,7 @@ pub fn invoke_send_message(
         receiver,
         is_use_asset_fee: false,
         amount: add_all_fees(account_infos, target_chain_id, 0, execution_fee, false)
-            .map_err(|err| Error::AmountOverflowedWhileAddingFee)?,
+            .map_err(|_| Error::AmountOverflowedWhileAddingFee)?,
         submission_params: Some(SendSubmissionParamsInput::with_external_call(
             external_call,
             execution_fee,
@@ -233,7 +233,7 @@ pub fn invoke_send_message(
         referral_code: None,
     };
 
-    invoke_debridge_send(send_ix, account_infos).map_err(|err| err.into())
+    invoke_debridge_send(send_ix, account_infos)
 }
 
 #[cfg(test)]
@@ -295,7 +295,29 @@ pub fn get_chain_support_info(
     account_infos: &[AccountInfo],
     target_chain_id: [u8; 32],
 ) -> Result<ChainSupportInfo, Error> {
-    get_account_by_index(remaining_accounts, CHAIN_SUPPORT_INFO_INDEX)
+    check_chain_support_info_account(account_infos, target_chain_id)
+        .and_then(|()| get_account_by_index(account_infos, CHAIN_SUPPORT_INFO_INDEX))
+}
+
+/// Check that provided chain support info account refers to `target_chain_id`
+///
+/// # Arguments
+/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `target_chain_id` - chain id to which the tokens are sent}
+pub fn check_chain_support_info_account(
+    account_infos: &[AccountInfo],
+    target_chain_id: [u8; 32],
+) -> Result<(), Error> {
+    account_infos
+        .get(CHAIN_SUPPORT_INFO_INDEX)
+        .ok_or(Error::WrongAccountIndex)
+        .and_then(|chain_support_info| {
+            Pubkey::find_chain_support_info_address(&target_chain_id)?
+                .0
+                .eq(chain_support_info.key)
+                .then_some(())
+                .ok_or(Error::WrongChainSupportInfo)
+        })
 }
 
 /// Get Bridge asset fee info account account structure from sending accounts
@@ -305,9 +327,23 @@ pub fn get_chain_support_info(
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn get_asset_fee_info(
     account_infos: &[AccountInfo],
-    _target_chain_id: [u8; 32],
+    target_chain_id: [u8; 32],
 ) -> Result<AssetFeeInfo, Error> {
-    get_account_by_index(remaining_accounts, ASSET_FEE_INDEX)
+    account_infos
+        .get(TOKEN_MINT_INDEX)
+        .zip(account_infos.get(ASSET_FEE_INDEX))
+        .ok_or(Error::WrongAccountIndex)
+        .and_then(|(token_mint, asset_fee)| {
+            Pubkey::find_asset_fee_info_address(
+                &Pubkey::find_bridge_address(token_mint.key)?.0,
+                &target_chain_id,
+            )?
+            .0
+            .eq(asset_fee.key)
+            .then_some(())
+            .ok_or(Error::WrongBridgeFeeInfo)
+        })
+        .and_then(|()| get_account_by_index(account_infos, ASSET_FEE_INDEX))
 }
 
 /// Parse account structure from sending accounts by index
@@ -331,11 +367,11 @@ pub fn get_account_by_index<T: TryFromAccount<Error = Error>>(
 /// * `account_infos` - account forming by client from debridge-typesctipr-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn is_chain_supported(
-    remaining_accounts: &[AccountInfo],
-    _target_chain_id: [u8; 32],
+    account_infos: &[AccountInfo],
+    target_chain_id: [u8; 32],
 ) -> Result<bool, Error> {
     Ok(
-        match get_chain_support_info(remaining_accounts, _target_chain_id)? {
+        match get_chain_support_info(account_infos, target_chain_id)? {
             ChainSupportInfo::Supported { .. } => true,
             ChainSupportInfo::NotSupported => false,
         },
@@ -348,10 +384,34 @@ pub fn is_chain_supported(
 /// * `account_infos` - account forming by client from debridge-typesctipr-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn get_transfer_fee(
-    _remaining_accoutns: &[AccountInfo],
-    _target_chain_id: [u8; 32],
+    account_infos: &[AccountInfo],
+    target_chain_id: [u8; 32],
 ) -> Result<u64, Error> {
-    todo!()
+    get_transfer_fee_for_chain(account_infos, target_chain_id).and_then(|chain_fee| {
+        chain_fee
+            .map(Ok)
+            .unwrap_or_else(|| Ok(get_state(account_infos)?.global_transfer_fee_bps))
+    })
+}
+
+/// Some networks have their own transfer fee bps
+/// Get own transfer fee bps to target chain id if defined
+///
+/// # Arguments
+/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `target_chain_id` - chain id to which the tokens are sent
+pub fn get_transfer_fee_for_chain(
+    account_infos: &[AccountInfo],
+    target_chain_id: [u8; 32],
+) -> Result<Option<u64>, Error> {
+    get_chain_support_info(account_infos, target_chain_id).and_then(|chain_support_info| {
+        match chain_support_info {
+            ChainSupportInfo::NotSupported => Err(Error::TargetChainNotSupported),
+            ChainSupportInfo::Supported {
+                transfer_fee_bps, ..
+            } => Ok(transfer_fee_bps),
+        }
+    })
 }
 
 /// Get native fixed fee for sending to target chain id

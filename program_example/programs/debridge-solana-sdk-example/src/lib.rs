@@ -228,9 +228,9 @@ pub mod debridge_invoke_example {
     }
 
     /// Debridge protocol allows call any smart contract in target chain without sending any tokens.
-    /// You have to payed transfer fee for transfering execution fee in target chain.
-    /// If you will claim by yourself then set execution fee to zero and don't pay transfer fee.
-    /// Only fixed fee will be payed.
+    /// You have to pay only transfer fee for transfering execution fee in target chain.
+    /// If you will claim by yourself then set execution fee to zero and don't pay transfer fee at all.
+    /// Only fixed fee will be taken.
     ///
     /// Used `external_call` for this. For evm-like network it will be address of smart contract
     /// function and function's arguments packed in byte vector.

@@ -132,9 +132,43 @@ pub struct AssetFeeInfo {
     pub asset_chain_fee: Option<u64>,
 }
 
+impl AssetFeeInfo {
+    pub const SEED: &'static [u8] = b"BRIDGE_FEE_INFO";
+    pub const DEFAULT_ASSET_FEE_SEED: &[u8] = b"DEFAULT_BRIDGE_FEE_INFO";
+}
+
 const ASSET_FEE_DISCRIMINATOR: [u8; 8] = [37, 184, 34, 110, 54, 84, 57, 85];
 impl Discriminator for AssetFeeInfo {
     fn discriminator() -> [u8; 8] {
         ASSET_FEE_DISCRIMINATOR
     }
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
+pub struct Bridge {
+    /// Maximum amount to transfer
+    pub max_amount: u64,
+    /// Total locked assets
+    pub balance: u64,
+    /// Total locked assets in strategy (AAVE, Compound, etc)
+    locked_in_strategies: u64,
+    /// Minimal hot reserves in basis points (1/10000)
+    pub min_reserves_bps: u64,
+    pub state: BridgeState,
+    /// Total collected fees
+    pub collected_fee: u64,
+    /// Fees that already withdrawn
+    pub withdrawn_fee: u64,
+    /// Total fees collected in lamports
+    pub collected_native_fee: u64,
+}
+
+impl Bridge {
+    pub const SEED: &'static [u8] = b"BRIDGE";
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
+pub enum BridgeState {
+    Work,
+    Paused,
 }

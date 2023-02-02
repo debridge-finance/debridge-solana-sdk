@@ -50,6 +50,10 @@ pub enum Error {
     WrongAccountIndex,
     #[error("Provided ChainSupportInfo for other target chain id. Please create account list with debridge sdk")]
     WrongChainSupportInfo,
+    #[error("Provided target chain id not supported")]
+    TargetChainNotSupported,
+    #[error("Provided BridgeFee for other target chain id or other token mint. Please create account list with debridge sdk")]
+    WrongBridgeFeeInfo,
     #[error("Failed to find state account in provided accounts. Please create account list with debridge sdk")]
     WrongState,
     #[error("Failed to borrow account data")]
