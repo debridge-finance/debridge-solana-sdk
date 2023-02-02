@@ -1,1 +1,13 @@
-{"account":{"data":["rzsofzchyMsBAZYAAAAAAAAAAfoAAAAAAAAAFAD/","base64"],"executable":false,"lamports":1099680,"owner":"GH5e7r1zJGE4SsTikj9mRua2Q1zNAM1XNwgmcFn8JLR","rentEpoch":0},"pubkey":"FKnr3QFy1wbxf9MJHmfWaR36D3DosPSDBXkVAfLiNk6B"}
+{
+  "pubkey": "FKnr3QFy1wbxf9MJHmfWaR36D3DosPSDBXkVAfLiNk6B",
+  "account": {
+    "lamports": 1099680,
+    "data": [
+      "rzsofzchyMsBAZYAAAAAAAAAAfoAAAAAAAAAFAD/",
+      "base64"
+    ],
+    "owner": "GH5e7r1zJGE4SsTikj9mRua2Q1zNAM1XNwgmcFn8JLR",
+    "executable": false,
+    "rentEpoch": 0
+  }
+}
