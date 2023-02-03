@@ -9,7 +9,7 @@ use std::{
 
 use base58::FromBase58;
 use borsh::de::BorshDeserialize;
-use debridge_sdk::debridge_accounts::ChainSupportInfo;
+use debridge_solana_sdk::debridge_accounts::ChainSupportInfo;
 use rstest::*;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_program::pubkey::Pubkey;

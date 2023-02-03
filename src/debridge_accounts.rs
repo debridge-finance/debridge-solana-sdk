@@ -134,7 +134,7 @@ pub struct AssetFeeInfo {
 
 impl AssetFeeInfo {
     pub const SEED: &'static [u8] = b"BRIDGE_FEE_INFO";
-    pub const DEFAULT_ASSET_FEE_SEED: &[u8] = b"DEFAULT_BRIDGE_FEE_INFO";
+    pub const DEFAULT_ASSET_FEE_SEED: &'static [u8] = b"DEFAULT_BRIDGE_FEE_INFO";
 }
 
 const ASSET_FEE_DISCRIMINATOR: [u8; 8] = [37, 184, 34, 110, 54, 84, 57, 85];

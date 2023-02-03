@@ -1,15 +1,13 @@
 [package]
-name = "debridge-sdk"
+name = "debridge-solana-sdk"
 version = "0.0.0"
 publish = false
 edition = "2021"
 
 [dependencies]
-solana-program = "1.10.41"
-solana-sdk = "1.10.41"
+solana-program = "1.14.6"
 borsh = "0.9.1"
 hex = "0.4.3"
 thiserror = "1.0.30"
 lazy_static = "1.4.0"
 sha3 = "0.10.6"
-
