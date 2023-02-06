@@ -528,16 +528,16 @@ pub fn add_transfer_fee(
         .map_err(|_| OVERFLOW_ERR)
 }
 
-const CHAIN_SUPPORT_INFO_INDEX: usize = 3;
-const STATE_INDEX: usize = 6;
-const ASSET_FEE_INDEX: usize = 15;
+const CHAIN_SUPPORT_INFO_INDEX: usize = 4;
+const STATE_INDEX: usize = 7;
+const ASSET_FEE_INDEX: usize = 16;
 const TOKEN_MINT_INDEX: usize = 1;
 
-const EXTERNAL_CALL_STORAGE_INDEX: usize = 11;
-const EXTERNAL_CALL_META_INDEX: usize = 12;
-const SEND_FROM_INDEX: usize = 13;
-const SYSTEM_PROGRAM_INDEX: usize = 10;
-const DEBRIDGE_PROGRAM_INDEX: usize = 16;
+const EXTERNAL_CALL_STORAGE_INDEX: usize = 12;
+const EXTERNAL_CALL_META_INDEX: usize = 13;
+const SEND_FROM_INDEX: usize = 14;
+const SYSTEM_PROGRAM_INDEX: usize = 11;
+const DEBRIDGE_PROGRAM_INDEX: usize = 17;
 
 struct MetaTemplate {
     is_signer: bool,
