@@ -75,3 +75,26 @@ pub trait BridgePubkey {
     }
 }
 impl BridgePubkey for Pubkey {}
+
+#[cfg(test)]
+mod tests {
+    use crate::debridge_accounts::ChainSupportInfo;
+    use crate::debridge_accounts::Status::Paused;
+    use crate::keys::ChainSupportInfoPubkey;
+    use solana_program::pubkey::Pubkey;
+    use std::str::FromStr;
+
+    #[test]
+    fn find_chain_support_info_test() {
+        let target_chain_id = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 137,
+        ];
+        assert_eq!(
+            Pubkey::find_chain_support_info_address(&target_chain_id)
+                .unwrap()
+                .0,
+            Pubkey::from_str("8L81QZBfwA6Xi9zd49fyUfMRWJBCAxiUxd6jGHPnu1BQ").unwrap()
+        );
+    }
+}

@@ -250,10 +250,10 @@ pub mod debridge_invoke_example {
         receiver: Vec<u8>,
         execution_fee: u64,
         fallback_address: Vec<u8>,
-        external_call: Vec<u8>,
+        message: Vec<u8>,
     ) -> Result<()> {
         invoke_send_message(
-            external_call,
+            message,
             target_chain_id,
             receiver,
             execution_fee,
