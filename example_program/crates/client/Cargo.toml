@@ -1,8 +1,0 @@
-[package]
-name = "debridge-solana-sdk-example-client"
-version = "0.0.0"
-publish = false
-edition = "2021"
-
-[dependencies]
-debridge-solana-sdk-example = { path = "../../programs/debridge-solana-sdk-example", features = ["cpi", "no-entrypoint"] }

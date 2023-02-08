@@ -964,13 +964,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "debridge-solana-sdk-example-client"
-version = "0.0.0"
-dependencies = [
- "debridge-solana-sdk-example",
-]
-
-[[package]]
 name = "der"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

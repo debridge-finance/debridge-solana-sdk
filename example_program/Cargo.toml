@@ -9,7 +9,6 @@ resolver = "2"
 [workspace]
 members = [
     "programs/*",
-    "crates/*",
 ]
 
 [profile.release]
