@@ -3,10 +3,12 @@ extern crate core;
 use std::env;
 
 use solana_program::pubkey::Pubkey;
+use std::str::FromStr;
 
 pub mod check_claiming;
 pub mod debridge_accounts;
 pub mod keys;
+pub mod reserved_flags;
 pub mod sending;
 
 //TODO: Create pubkey with procedure macros
@@ -75,4 +77,12 @@ impl HashAdapter for sha3::Keccak256 {
         use sha3::Digest;
         Self::digest(input).as_slice().try_into().unwrap()
     }
+}
+
+pub fn get_debridge_id() -> Pubkey {
+    Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap()
+}
+
+pub fn get_settings_id() -> Pubkey {
+    Pubkey::from_str(SETTINGS_ID_RAW).unwrap()
 }

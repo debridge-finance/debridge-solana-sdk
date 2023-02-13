@@ -1,4 +1,4 @@
-use std::str::FromStr;
+
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
@@ -11,8 +11,9 @@ use solana_program::{
 
 use crate::{
     debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
+    get_debridge_id,
     keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
-    Error, HashAdapter, Pubkey, BPS_DENOMINATOR, DEBRIDGE_ID_RAW, INIT_EXTERNAL_CALL_DISCRIMINATOR,
+    Error, HashAdapter, Pubkey, BPS_DENOMINATOR, INIT_EXTERNAL_CALL_DISCRIMINATOR,
     SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
 };
 
@@ -92,13 +93,13 @@ pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> P
 
     if account_infos[SEND_META_TEMPLATE.len() - 1]
         .key
-        .ne(&Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap())
+        .ne(&get_debridge_id())
     {
         return Err(Error::WrongDebridgeProgram.into());
     }
 
     let ix = Instruction {
-        program_id: Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap(),
+        program_id: get_debridge_id(),
         accounts: account_infos
             .iter()
             .take(SEND_META_TEMPLATE.len())
@@ -173,7 +174,7 @@ pub fn invoke_init_external_call(
 
     invoke(
         &Instruction::new_with_bytes(
-            Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap(),
+            get_debridge_id(),
             &[
                 INIT_EXTERNAL_CALL_DISCRIMINATOR.as_slice(),
                 InitExternalCallIx {

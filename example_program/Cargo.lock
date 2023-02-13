@@ -2700,12 +2700,15 @@ dependencies = [
 name = "sdk-example-root"
 version = "0.0.0"
 dependencies = [
+ "anchor-lang",
  "base58",
  "borsh",
  "debridge-solana-sdk",
  "debridge-solana-sdk-example",
+ "hex",
  "log",
  "rstest",
+ "sha3 0.10.6",
  "simple_logger",
  "solana-client",
  "solana-program",
