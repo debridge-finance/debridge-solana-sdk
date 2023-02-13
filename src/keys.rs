@@ -78,8 +78,8 @@ impl BridgePubkey for Pubkey {}
 
 #[cfg(test)]
 mod tests {
-    use crate::debridge_accounts::ChainSupportInfo;
-    use crate::debridge_accounts::Status::Paused;
+    
+    
     use crate::keys::ChainSupportInfoPubkey;
     use solana_program::pubkey::Pubkey;
     use std::str::FromStr;

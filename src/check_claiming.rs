@@ -1,13 +1,12 @@
-use std::str::FromStr;
+
 
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
-    pubkey::Pubkey,
 };
 
 use crate::{
     debridge_accounts::{SubmissionAccount, TryFromAccount},
-    Error, DEBRIDGE_ID_RAW, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR,
+    get_debridge_id, Error, DEBRIDGE_ID_RAW, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR,
 };
 
 impl From<Error> for ProgramError {
@@ -40,7 +39,7 @@ pub fn check_execution_context(
         instructions,
     )?;
 
-    if current_ix.program_id != Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap() {
+    if current_ix.program_id != get_debridge_id() {
         msg!(
             "Expected: {}, Actual: {}",
             DEBRIDGE_ID_RAW,
