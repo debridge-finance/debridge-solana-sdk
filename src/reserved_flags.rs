@@ -27,7 +27,7 @@ pub trait SetReservedFlag {
 
 impl SetReservedFlag for [u8; 32] {
     fn set_flag<const FLAG: u8>(&mut self) {
-        self[31 - FLAG as usize / 8] |= 8 << 1;
+        self[31 - FLAG as usize / 8] |= 1 << (FLAG % 8);
     }
 }
 
@@ -41,7 +41,7 @@ pub trait CheckReservedFlag {
 }
 impl CheckReservedFlag for &[u8; 32] {
     fn check_bit(self, bit: u8) -> bool {
-        self[31 - bit as usize / 8] & (8 << 1) == (8 << 1)
+        self[31 - bit as usize / 8] & (1 << (bit % 8)) == (1 << (bit % 8))
     }
     fn check_unwrap_eth(self) -> bool {
         self.check_bit(UNWRAP_ETH)
@@ -82,7 +82,90 @@ impl CheckReservedFlag for &SendSubmissionParamsInput {
 
 #[cfg(test)]
 mod flag_test {
+    use crate::reserved_flags::CheckReservedFlag;
+    use crate::reserved_flags::SetReservedFlag;
 
     #[test]
-    fn bit_test() {}
+    fn bit_test() {
+        let expect = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
+
+        let mut actual = [0; 32];
+        actual.set_flag::<128>();
+
+        assert!(actual.check_bit(128));
+        assert_eq!(expect, actual);
+    }
+
+    #[test]
+    fn unwrap_eth_test() {
+        let expect = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 1,
+        ];
+
+        let mut actual = [0; 32];
+        actual.set_unwrap_eth();
+
+        assert_eq!(expect, actual);
+        assert!(actual.check_unwrap_eth());
+    }
+
+    #[test]
+    fn unwrap_revert_if_external_call_test() {
+        let expect = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 2,
+        ];
+
+        let mut actual = [0; 32];
+        actual.set_revert_if_external_call();
+
+        assert_eq!(expect, actual);
+        assert!(actual.check_revert_if_external_call());
+    }
+
+    #[test]
+    fn unwrap_proxy_with_sender_test() {
+        let expect = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 4,
+        ];
+
+        let mut actual = [0; 32];
+        actual.set_proxy_with_sender();
+
+        assert_eq!(expect, actual);
+        assert!(actual.check_proxy_with_sender());
+    }
+
+    #[test]
+    fn unwrap_send_hashed_data_test() {
+        let expect = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 8,
+        ];
+
+        let mut actual = [0; 32];
+        actual.set_send_hashed_data();
+
+        assert_eq!(expect, actual);
+        assert!(actual.check_send_hashed_data());
+    }
+
+    #[test]
+    fn direct_flow_test() {
+        let expect = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            128, 0, 0, 0,
+        ];
+
+        let mut actual = [0; 32];
+        actual.set_direct_flow();
+
+        assert_eq!(expect, actual);
+        assert!(actual.check_direct_flow());
+    }
 }
