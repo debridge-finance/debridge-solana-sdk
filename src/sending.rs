@@ -1,5 +1,3 @@
-
-
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo,
@@ -9,6 +7,7 @@ use solana_program::{
     program_error::ProgramError,
 };
 
+use crate::reserved_flags::SetReservedFlag;
 use crate::{
     debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
     get_debridge_id,
@@ -16,7 +15,6 @@ use crate::{
     Error, HashAdapter, Pubkey, BPS_DENOMINATOR, INIT_EXTERNAL_CALL_DISCRIMINATOR,
     SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
 };
-
 /// Struct for forming send instruction in debridge program
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SendIx {
@@ -67,14 +65,39 @@ impl SendSubmissionParamsInput {
     /// * `external_call` - instructions sending in target chain
     /// * `execution_fee` - amount of execution fee
     /// * `fallback_address` -  reserve address for sending tokens if external call fails
+    /// * `reserved_flag` - flags for additional debridge protocol features
     pub fn with_external_call(
         external_call: Vec<u8>,
         execution_fee: u64,
         fallback_address: Vec<u8>,
+        reserved_flag: [u8; 32],
     ) -> Self {
         SendSubmissionParamsInput {
             execution_fee,
-            reserved_flag: [0; 32],
+            reserved_flag,
+            fallback_address,
+            external_call_shortcut: sha3::Keccak256::hash(external_call.as_slice()),
+        }
+    }
+
+    /// Create submission params for sending message to other chain
+    ///
+    /// # Arguments
+    /// * `external_call` - instructions sending in target chain
+    /// * `execution_fee` - amount of execution fee
+    /// * `fallback_address` -  reserve address for sending tokens if external call fails
+    pub fn with_message(
+        external_call: Vec<u8>,
+        execution_fee: u64,
+        fallback_address: Vec<u8>,
+    ) -> Self {
+        let mut reserved_flags = [0; 32];
+        reserved_flags.set_revert_if_external_call();
+        reserved_flags.set_proxy_with_sender();
+
+        SendSubmissionParamsInput {
+            execution_fee,
+            reserved_flag: reserved_flags,
             fallback_address,
             external_call_shortcut: sha3::Keccak256::hash(external_call.as_slice()),
         }
@@ -226,7 +249,7 @@ pub fn invoke_send_message(
         is_use_asset_fee: false,
         amount: add_all_fees(account_infos, target_chain_id, 0, execution_fee, false)
             .map_err(|_| Error::AmountOverflowedWhileAddingFee)?,
-        submission_params: Some(SendSubmissionParamsInput::with_external_call(
+        submission_params: Some(SendSubmissionParamsInput::with_message(
             external_call,
             execution_fee,
             fallback_address,
