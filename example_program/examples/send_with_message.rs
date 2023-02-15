@@ -1,17 +1,13 @@
-use solana_sdk::compute_budget::{ComputeBudgetInstruction, ID as BUDGET_ID};
 use std::{env, str::FromStr};
 
 use anchor_lang::InstructionData;
-use debridge_solana_sdk::debridge_accounts::ExternalCallMeta;
 use debridge_solana_sdk::{HashAdapter, SOLANA_CHAIN_ID};
 use debridge_solana_sdk_example::{instruction::SendMessageViaDebridge, ID as EXAMPLE_ID};
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
 use solana_program::instruction::{AccountMeta, Instruction};
 use solana_sdk::{
-    pubkey::Pubkey,
-    signature::Signer,
-    signer::keypair::{read_keypair_file, Keypair},
-    transaction::Transaction,
+    compute_budget::ComputeBudgetInstruction, pubkey::Pubkey, signature::Signer,
+    signer::keypair::read_keypair_file, transaction::Transaction,
 };
 
 fn get_send_acount(payer: Pubkey, wallet: Pubkey, shortcut: [u8; 32]) -> [AccountMeta; 18] {
@@ -163,6 +159,8 @@ fn main() {
         .map(|wallet| Pubkey::from_str(wallet.pubkey.as_str()).expect("Failed to parse wallet"))
         .expect("There are no payer wallets");
 
+    let budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(230000);
+
     let ix = Instruction {
         program_id: EXAMPLE_ID,
         accounts: get_send_acount(
@@ -189,9 +187,16 @@ fn main() {
     let blockhash = rpc_client
         .get_latest_blockhash()
         .expect("Failed to get blockhash");
-    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], blockhash);
+    let tx = Transaction::new_signed_with_payer(
+        &[budget_ix, ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        blockhash,
+    );
 
-    rpc_client
+    let signature = rpc_client
         .send_transaction(&tx)
         .expect("Failed to send transaction");
+
+    println!("Success! Transaction signature: {:?}", signature);
 }
