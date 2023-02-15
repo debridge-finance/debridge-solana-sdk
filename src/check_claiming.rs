@@ -1,5 +1,3 @@
-
-
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
 };
@@ -95,7 +93,7 @@ pub fn check_execution_context(
         )
     }
 
-    let submission_account = SubmissionAccount::try_from_accounts(submission)?;
+    let submission_account = SubmissionAccount::try_from_account(submission)?;
 
     if submission_account.source_chain_id.ne(&source_chain_id) {
         msg!(

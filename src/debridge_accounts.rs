@@ -10,7 +10,7 @@ trait Discriminator {
 pub trait TryFromAccount: Sized + BorshSerialize + BorshDeserialize {
     type Error;
 
-    fn try_from_accounts(account_info: &AccountInfo) -> Result<Self, Self::Error>;
+    fn try_from_account(account_info: &AccountInfo) -> Result<Self, Self::Error>;
 }
 
 impl<ACCOUNT: Discriminator + Sized + BorshSerialize + BorshDeserialize> TryFromAccount
@@ -18,7 +18,7 @@ impl<ACCOUNT: Discriminator + Sized + BorshSerialize + BorshDeserialize> TryFrom
 {
     type Error = Error;
 
-    fn try_from_accounts(account_info: &AccountInfo) -> Result<Self, Self::Error> {
+    fn try_from_account(account_info: &AccountInfo) -> Result<Self, Self::Error> {
         let borrow_data = account_info
             .try_borrow_data()
             .map_err(|_| Error::AccountBorrowFailing)?;
@@ -161,6 +161,13 @@ pub struct Bridge {
     pub withdrawn_fee: u64,
     /// Total fees collected in lamports
     pub collected_native_fee: u64,
+}
+
+const BRIDGE_DISCRIMINATOR: [u8; 8] = [231, 232, 31, 98, 110, 3, 23, 59];
+impl Discriminator for Bridge {
+    fn discriminator() -> [u8; 8] {
+        BRIDGE_DISCRIMINATOR
+    }
 }
 
 impl Bridge {
