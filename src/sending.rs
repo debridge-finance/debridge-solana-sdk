@@ -1,3 +1,13 @@
+use crate::debridge_accounts::ExternalCallMeta;
+use crate::reserved_flags::SetReservedFlag;
+use crate::InvokeError;
+use crate::{
+    debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
+    get_debridge_id,
+    keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
+    Error, HashAdapter, Pubkey, BPS_DENOMINATOR, INIT_EXTERNAL_CALL_DISCRIMINATOR,
+    SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
+};
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo,
@@ -7,14 +17,6 @@ use solana_program::{
     program_error::ProgramError,
 };
 
-use crate::reserved_flags::SetReservedFlag;
-use crate::{
-    debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
-    get_debridge_id,
-    keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
-    Error, HashAdapter, Pubkey, BPS_DENOMINATOR, INIT_EXTERNAL_CALL_DISCRIMINATOR,
-    SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
-};
 /// Struct for forming send instruction in debridge program
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SendIx {
@@ -206,7 +208,8 @@ pub fn invoke_init_external_call(
                     external_call_shortcut: sha3::Keccak256::hash(external_call),
                     external_call: external_call.to_vec(),
                 }
-                .try_to_vec()?
+                .try_to_vec()
+                .map_err(ProgramError::from)?
                 .as_slice(),
             ]
             .concat(),
@@ -220,7 +223,7 @@ pub fn invoke_init_external_call(
             debridge_program,
         ],
     )?;
-    Ok(external_call_shortcut)
+    Ok(())
 }
 
 /// Send message to other chain without liqudity.
@@ -240,7 +243,7 @@ pub fn invoke_send_message(
     execution_fee: u64,
     fallback_address: Vec<u8>,
     account_infos: &[AccountInfo],
-) -> Result<(), ProgramError> {
+) -> Result<(), InvokeError> {
     invoke_init_external_call(external_call.as_slice(), account_infos)?;
 
     let send_ix = SendIx {
@@ -257,7 +260,9 @@ pub fn invoke_send_message(
         referral_code: None,
     };
 
-    invoke_debridge_send(send_ix, account_infos)
+    invoke_debridge_send(send_ix, account_infos)?;
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -382,7 +387,7 @@ pub fn get_account_by_index<T: TryFromAccount<Error = Error>>(
     if account_infos.len() <= account_index {
         return Err(Error::WrongAccountIndex);
     }
-    T::try_from_accounts(&account_infos[account_index])
+    T::try_from_account(&account_infos[account_index])
 }
 
 /// Check the possibility of sending to the chain by chain id

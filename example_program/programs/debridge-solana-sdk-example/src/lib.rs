@@ -8,6 +8,7 @@ use debridge_solana_sdk::{
         SendSubmissionParamsInput,
     },
 };
+
 declare_id!("5UaXbex7paiRDykrN2GaRPW7j7goEQ1ZWqQvUwnAfFTF");
 
 #[program]
@@ -21,6 +22,8 @@ pub mod debridge_invoke_example {
         FailedToCalculateAmountWithFee,
     }
 
+    use anchor_lang::solana_program;
+    use anchor_lang::solana_program::program_error::ProgramError;
     use debridge_solana_sdk::sending::invoke_init_external_call;
 
     use super::*;
@@ -210,7 +213,7 @@ pub mod debridge_invoke_example {
         external_call: Vec<u8>,
     ) -> Result<()> {
         invoke_init_external_call(external_call.as_slice(), ctx.remaining_accounts)
-            .map_err(AnchorError::from)?;
+            .map_err(solana_program::program_error::ProgramError::from)?;
 
         let send_ix = SendIx {
             target_chain_id,
@@ -262,7 +265,9 @@ pub mod debridge_invoke_example {
             fallback_address,
             ctx.remaining_accounts,
         )
-        .map_err(|err| err.into())
+        .map_err(|err| ProgramError::from(err))?;
+
+        Ok(())
     }
 
     /// Debridge protocol allows to execute some Solana instructions from evm-like chains.

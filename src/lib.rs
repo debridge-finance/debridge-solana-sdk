@@ -2,6 +2,7 @@ extern crate core;
 
 use std::env;
 
+use solana_program::program_error::ProgramError;
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
 
@@ -66,6 +67,34 @@ pub enum Error {
     AmountOverflowedWhileAddingFee,
     #[error("Wrong ")]
     WrongSettingProgramId,
+    #[error("Provided external storage with wrong. External storage have to be not initialized or be in Transferred state")]
+    ExternalStorageWrongState,
+}
+
+pub enum InvokeError {
+    SdkError(Error),
+    SolanaProgramError(ProgramError),
+}
+
+impl From<Error> for InvokeError {
+    fn from(err: Error) -> Self {
+        InvokeError::SdkError(err)
+    }
+}
+
+impl From<ProgramError> for InvokeError {
+    fn from(err: ProgramError) -> Self {
+        InvokeError::SolanaProgramError(err)
+    }
+}
+
+impl From<InvokeError> for ProgramError {
+    fn from(err: InvokeError) -> Self {
+        match err {
+            InvokeError::SdkError(err) => err.into(),
+            InvokeError::SolanaProgramError(err) => err,
+        }
+    }
 }
 
 pub trait HashAdapter {
