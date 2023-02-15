@@ -2,7 +2,9 @@ use std::{env, str::FromStr};
 
 use anchor_lang::InstructionData;
 use debridge_solana_sdk::{HashAdapter, SOLANA_CHAIN_ID};
-use debridge_solana_sdk_example::{instruction::SendMessageViaDebridge, ID as EXAMPLE_ID};
+use debridge_solana_sdk_example::{
+    instruction::SendViaDebridgeWithAssetFixedFee, ID as EXAMPLE_ID,
+};
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
 use solana_program::instruction::Instruction;
 use solana_sdk::{
@@ -38,7 +40,7 @@ fn main() {
 
     let payer = read_keypair_file(env!("KEYPAIR_PATH")).expect("Failed to parse payer keypair");
 
-    let message = hex::decode("a69b6ed0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000050011223344556600000000000000000000000000000000000000000000000000").expect("Failed to decode external code");
+    let message: Vec<u8> = vec![];
 
     let wallet = rpc_client
         .get_token_accounts_by_owner(
@@ -63,11 +65,8 @@ fn main() {
             sha3::Keccak256::hash(message.as_slice()),
         )
         .to_vec(),
-        data: SendMessageViaDebridge {
-            execution_fee: 0,
-            message,
-            fallback_address: hex::decode("bd1e72155Ce24E57D0A026e0F7420D6559A7e651")
-                .expect("Failed to decode fallback address"),
+        data: SendViaDebridgeWithAssetFixedFee {
+            amount: 0,
             receiver: hex::decode("cfcc66ee5397b7cdf7228f7502d1e168518c6bb3")
                 .expect("Failed to decode receiver"),
             target_chain_id: [

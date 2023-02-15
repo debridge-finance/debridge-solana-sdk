@@ -1,11 +1,14 @@
 #![allow(clippy::result_large_err)]
 
-use anchor_lang::{prelude::*, solana_program::sysvar};
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program_error, sysvar},
+};
 use debridge_solana_sdk::{
     check_claiming::check_execution_context,
     sending::{
-        add_all_fees, invoke_debridge_send, invoke_send_message, is_chain_supported, SendIx,
-        SendSubmissionParamsInput,
+        add_all_fees, invoke_debridge_send, invoke_send_message, is_asset_fee_avaliable,
+        is_chain_supported, SendIx, SendSubmissionParamsInput,
     },
 };
 
@@ -20,9 +23,10 @@ pub mod debridge_invoke_example {
         ChainSupportInfoDeserializingFailed,
         MatchOverflowWhileCalculateInputAmount,
         FailedToCalculateAmountWithFee,
+        NotEnoughtAccountProvided,
     }
 
-    use anchor_lang::{solana_program, solana_program::program_error::ProgramError};
+    use anchor_lang::solana_program::program_error::ProgramError;
     use debridge_solana_sdk::sending::invoke_init_external_call;
 
     use super::*;
@@ -112,7 +116,15 @@ pub mod debridge_invoke_example {
             referral_code: None,
         };
 
-        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+        if is_asset_fee_avaliable(ctx.remaining_accounts, target_chain_id)
+            .map_err(|_| ErrorCode::NotEnoughtAccountProvided)?
+        {
+            invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(error::Error::from)
+        } else {
+            msg!("Asset fee not avaliable for provided tokens and target chain id");
+
+            Ok(())
+        }
     }
 
     /// Debridge protocol takes fix fee and transfer fee while sending liqudity.
@@ -133,7 +145,7 @@ pub mod debridge_invoke_example {
     /// To add to exact amount all fees charged during the send use [`debridge_solana_sdk::sending::add_all_fees`]
     pub fn send_via_debridge_with_exact_amount(
         ctx: Context<SendViaDebridge>,
-        exect_amount: u64,
+        exact_amount: u64,
         target_chain_id: [u8; 32],
         receiver: Vec<u8>,
         execution_fee: u64,
@@ -142,7 +154,7 @@ pub mod debridge_invoke_example {
         let final_amount = add_all_fees(
             ctx.remaining_accounts,
             target_chain_id,
-            exect_amount,
+            exact_amount,
             execution_fee,
             is_use_asset_fee,
         )
@@ -212,7 +224,7 @@ pub mod debridge_invoke_example {
         external_call: Vec<u8>,
     ) -> Result<()> {
         invoke_init_external_call(external_call.as_slice(), ctx.remaining_accounts)
-            .map_err(solana_program::program_error::ProgramError::from)?;
+            .map_err(program_error::ProgramError::from)?;
 
         let send_ix = SendIx {
             target_chain_id,
