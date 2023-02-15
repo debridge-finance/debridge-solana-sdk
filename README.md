@@ -1,4 +1,4 @@
-
+# debridge-solana-sdk
 
 ## About
 
@@ -21,17 +21,16 @@ anchor init send-via-debridge
 
 ### Add debridge-solana-sdk crate
 
-Next step is add debridge-solana-sdk crate to program dependency. Add to `./send-via-debridge/programs/Cargo.toml` 
-in chapter dependency next row:
-
-```toml
-debridge-solana-sdk = { git = "ssh://git@github.com/debridge-finance/debridge-solana-sdk.git" }
+Next step is add debridge-solana-sdk crate to program dependency:
+```bash
+cargo add --git ssh://git@github.com/debridge-finance/debridge-solana-sdk.git debridge-solana-sdk
 ```
 
 ### Create simple contract with using Debridge protocol
 
 Add in `./send-via-debridge/programs/src/lib.rs` code of simple smart contract that transfer tokens and message to other
 chain with debridge solana program:
+
 ```rust
 use anchor_lang::prelude::*;
 
@@ -63,6 +62,17 @@ pub mod send_via_debridge {
 pub struct SendViaDebridge {}
 
 ```
+
+### More
+To see program examples please visit:
+- [send_via_debridge](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L32)
+- [send_via_debridge_with_native_fixed_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L57)
+- [send_via_debridge_with_exact_amount](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L57)
+- [send_via_debridge_with_asset_fixed_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L85)
+- [send_via_debridge_with_execution_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L156)
+- [send_via_debridge_with_external_call](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L189)
+- [send_message_via_debridge](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L234)
+- [check_claiming](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L264)
 
 ### Build and deploy example contract
 
