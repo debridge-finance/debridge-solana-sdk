@@ -166,14 +166,22 @@ pub struct InitExternalCallIx {
 pub fn invoke_init_external_call(
     external_call: &[u8],
     account_infos: &[AccountInfo],
-) -> Result<[u8; 32], ProgramError> {
-    let external_call_shortcut = sha3::Keccak256::hash(external_call);
+) -> Result<(), InvokeError> {
+    let _external_call_shortcut = sha3::Keccak256::hash(external_call);
 
     let external_call_storage = account_infos[EXTERNAL_CALL_STORAGE_INDEX].clone();
     let external_call_meta = account_infos[EXTERNAL_CALL_META_INDEX].clone();
     let send_from = account_infos[SEND_FROM_INDEX].clone();
     let system_program = account_infos[SYSTEM_PROGRAM_INDEX].clone();
     let debridge_program = account_infos[DEBRIDGE_PROGRAM_INDEX].clone();
+
+    if external_call_meta.owner.eq(&get_debridge_id()) {
+        return match ExternalCallMeta::try_from_account(&external_call_meta)? {
+            ExternalCallMeta::Transferred { .. } => Ok(()),
+            _ => Err(InvokeError::SdkError(Error::ExternalStorageWrongState)),
+        };
+    }
+
     let accounts = vec![
         AccountMeta {
             pubkey: *external_call_storage.key,
