@@ -627,6 +627,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "cfg-match"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8100e46ff92eb85bf6dc2930c73f2a4f7176393c84a9446b3d501e1b354e7b34"
+
+[[package]]
 name = "chrono"
 version = "0.4.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -948,6 +954,8 @@ name = "debridge-solana-sdk"
 version = "0.0.0"
 dependencies = [
  "borsh",
+ "cfg-match",
+ "env_to_array",
  "hex",
  "lazy_static",
  "sha3 0.10.6",
@@ -1184,6 +1192,20 @@ dependencies = [
  "log",
  "regex",
  "termcolor",
+]
+
+[[package]]
+name = "env_to_array"
+version = "0.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a68eb1c66253e63d7378816b65ec942277bb2afd4fbf16c99d99db9b34c890e"
+dependencies = [
+ "base64 0.13.1",
+ "bs58 0.4.0",
+ "hex",
+ "itertools",
+ "proc-macro2 1.0.50",
+ "syn 1.0.107",
 ]
 
 [[package]]

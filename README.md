@@ -1,4 +1,4 @@
-# debridge-solana-sdk
+
 
 ## About
 
@@ -30,7 +30,7 @@ debridge-solana-sdk = { git = "ssh://git@github.com/debridge-finance/debridge-so
 
 ### Create simple contract with using Debridge protocol
 
-Add in `./send-via-debridge/programs/src/lib` code of simple smart contract that transfer tokens and message to other
+Add in `./send-via-debridge/programs/src/lib.rs` code of simple smart contract that transfer tokens and message to other
 chain with debridge solana program:
 ```rust
 use anchor_lang::prelude::*;
@@ -39,33 +39,23 @@ declare_id!("3botMWU4s1Lcs4Q2wQBkZqsCW1vc3N9H9tY9SZYVs5vZ");
 
 #[program]
 pub mod send_via_debridge {
-
-    use debridge_solana_sdk::sending::{invoke_debridge_send, SendIx, SendSubmissionParamsInput};
+    use debridge_solana_sdk::prelude::*;
 
     use super::*;
 
     pub fn send_via_debridge(ctx: Context<SendViaDebridge>) -> Result<()> {
-        let amount = 10000;
-        let execution_fee = 1000;
-
         invoke_debridge_send(
             SendIx {
-                target_chain_id: [
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 137,
-                ],
+                target_chain_id: chain_ids::ETHEREUM_CHAIN_ID,
                 receiver: hex::decode("bd1e72155Ce24E57D0A026e0F7420D6559A7e651").unwrap(),
                 is_use_asset_fee: false,
-                amount,
-                submission_params: Some(SendSubmissionParamsInput::execution_fee_only(
-                    execution_fee,
-                )),
+                amount: 1000,
+                submission_params: None,
                 referral_code: None,
             },
             ctx.remaining_accounts,
-        )?;
-
-        Ok(())
+        )
+        .map_err(|err| err.into())
     }
 }
 
@@ -74,18 +64,11 @@ pub struct SendViaDebridge {}
 
 ```
 
-### Build and deploy contract
+### Build and deploy example contract
 
-Before build test program need to provide Debridge and Settings program pubkeys through environment variables.
+Build program with anchor:
 ```bash
-export SETTINGS_PROGRAM_PUBKEY=DeSetTwWhjZq6Pz9Kfdo1KoS5NqtsM6G8ERbX4SSCSft
-export DEBRIDGE_PROGRAM_PUBKEY=DEbrdGj3HsRsAzx6uH4MKyREKxVAfBydijLUF3ygsFfh
-```
-
-Build program with anchor
-
-```bash
-anchor build
+cd example_program; anchor build
 ```
 
 Deploy program

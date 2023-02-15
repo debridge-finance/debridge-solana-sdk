@@ -3,8 +3,8 @@ use solana_program::{
 };
 
 use crate::{
-    debridge_accounts::{SubmissionAccount, TryFromAccount},
-    get_debridge_id, Error, DEBRIDGE_ID_RAW, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR,
+    debridge_accounts::{SubmissionAccount, TryFromAccount, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR},
+    Error, DEBRIDGE_ID,
 };
 
 impl From<Error> for ProgramError {
@@ -37,10 +37,10 @@ pub fn check_execution_context(
         instructions,
     )?;
 
-    if current_ix.program_id != get_debridge_id() {
+    if current_ix.program_id != DEBRIDGE_ID {
         msg!(
             "Expected: {}, Actual: {}",
-            DEBRIDGE_ID_RAW,
+            DEBRIDGE_ID,
             current_ix.program_id
         );
         return Err(Error::WrongClaimParentProgramId.into());

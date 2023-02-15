@@ -1,17 +1,16 @@
-use std::str::FromStr;
-
 use solana_program::pubkey::ParsePubkeyError;
 
 use crate::{
     debridge_accounts::{AssetFeeInfo, Bridge, ChainSupportInfo},
-    Error, Pubkey, DEBRIDGE_ID_RAW, SETTINGS_ID_RAW, SOLANA_CHAIN_ID,
+    Error, Pubkey, DEBRIDGE_ID, SETTINGS_ID, SOLANA_CHAIN_ID,
 };
 
+/// This trait is responsible for finding the pubkey for the [`ChainSupportInfo`] account
 pub trait ChainSupportInfoPubkey {
     fn find_chain_support_info_address(chain_id: &[u8; 32]) -> Result<(Pubkey, u8), Error> {
         Ok(Pubkey::find_program_address(
             &[ChainSupportInfo::SEED, chain_id],
-            &Pubkey::from_str(SETTINGS_ID_RAW).map_err(|_| Error::WrongSettingProgramId)?,
+            &SETTINGS_ID,
         ))
     }
     fn create_chain_support_info_address(
@@ -20,13 +19,14 @@ pub trait ChainSupportInfoPubkey {
     ) -> Result<Option<Pubkey>, ParsePubkeyError> {
         Ok(Pubkey::create_program_address(
             &[ChainSupportInfo::SEED, chain_id, &[bump][..]],
-            &Pubkey::from_str(SETTINGS_ID_RAW)?,
+            &SETTINGS_ID,
         )
         .ok())
     }
 }
 impl ChainSupportInfoPubkey for Pubkey {}
 
+/// This trait is responsible for finding the pubkey for the [`AssetFeeInfo`] account
 pub trait AssetFeeInfoPubkey {
     fn find_asset_fee_info_address(
         bridge: &Pubkey,
@@ -34,7 +34,7 @@ pub trait AssetFeeInfoPubkey {
     ) -> Result<(Pubkey, u8), Error> {
         Ok(Pubkey::find_program_address(
             &[AssetFeeInfo::SEED, bridge.as_ref(), chain_id],
-            &Pubkey::from_str(SETTINGS_ID_RAW).map_err(|_| Error::WrongSettingProgramId)?,
+            &SETTINGS_ID,
         ))
     }
 
@@ -45,7 +45,7 @@ pub trait AssetFeeInfoPubkey {
     ) -> Result<Option<Pubkey>, Error> {
         Ok(Pubkey::create_program_address(
             &[AssetFeeInfo::SEED, bridge.as_ref(), chain_id, &[bump]],
-            &Pubkey::from_str(SETTINGS_ID_RAW).map_err(|_| Error::WrongSettingProgramId)?,
+            &SETTINGS_ID,
         )
         .ok())
     }
@@ -53,7 +53,7 @@ pub trait AssetFeeInfoPubkey {
     fn default_bridge_fee_address() -> Result<(Pubkey, u8), Error> {
         Ok(Pubkey::find_program_address(
             &[AssetFeeInfo::DEFAULT_ASSET_FEE_SEED],
-            &Pubkey::from_str(SETTINGS_ID_RAW).map_err(|_| Error::WrongSettingProgramId)?,
+            &SETTINGS_ID,
         ))
     }
 }
@@ -63,13 +63,13 @@ pub trait BridgePubkey {
     fn find_bridge_address(token_mint: &Pubkey) -> Result<(Pubkey, u8), Error> {
         Ok(Pubkey::find_program_address(
             &[Bridge::SEED, token_mint.as_ref()],
-            &Pubkey::from_str(SETTINGS_ID_RAW).map_err(|_| Error::WrongSettingProgramId)?,
+            &SETTINGS_ID,
         ))
     }
     fn create_bridge_address(token_mint: &Pubkey, bump: u8) -> Result<Option<Pubkey>, Error> {
         Ok(Pubkey::create_program_address(
             &[Bridge::SEED, token_mint.as_ref(), &[bump]],
-            &Pubkey::from_str(SETTINGS_ID_RAW).map_err(|_| Error::WrongSettingProgramId)?,
+            &SETTINGS_ID,
         )
         .ok())
     }
@@ -78,12 +78,10 @@ impl BridgePubkey for Pubkey {}
 
 #[cfg(test)]
 mod tests {
-
+    use crate::keys::ChainSupportInfoPubkey;
     use std::str::FromStr;
 
     use solana_program::pubkey::Pubkey;
-
-    use crate::keys::ChainSupportInfoPubkey;
 
     #[test]
     fn find_chain_support_info_test() {
@@ -112,7 +110,7 @@ pub trait ExternalCallStoragePubkey {
                 owner.as_ref(),
                 &SOLANA_CHAIN_ID,
             ],
-            &Pubkey::from_str(DEBRIDGE_ID_RAW).map_err(|_| Error::WrongDebridgeProgramId)?,
+            &DEBRIDGE_ID,
         ))
     }
 
@@ -129,7 +127,7 @@ pub trait ExternalCallStoragePubkey {
                 &SOLANA_CHAIN_ID,
                 &[bump],
             ],
-            &Pubkey::from_str(DEBRIDGE_ID_RAW).map_err(|_| Error::WrongDebridgeProgramId)?,
+            &DEBRIDGE_ID,
         )
         .ok())
     }
@@ -142,7 +140,7 @@ pub trait ExternalCallMetaPubkey {
     ) -> Result<(Pubkey, u8), Error> {
         Ok(Pubkey::find_program_address(
             &[b"EXTERNAL_CALL_META", external_call_storage.as_ref()],
-            &Pubkey::from_str(DEBRIDGE_ID_RAW).map_err(|_| Error::WrongDebridgeProgramId)?,
+            &DEBRIDGE_ID,
         ))
     }
 
@@ -156,7 +154,7 @@ pub trait ExternalCallMetaPubkey {
                 external_call_storage.as_ref(),
                 &[bump],
             ],
-            &Pubkey::from_str(DEBRIDGE_ID_RAW).map_err(|_| Error::WrongDebridgeProgramId)?,
+            &DEBRIDGE_ID,
         )
         .ok())
     }

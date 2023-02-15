@@ -28,6 +28,7 @@ pub mod debridge_invoke_example {
 
     use anchor_lang::solana_program::program_error::ProgramError;
     use debridge_solana_sdk::sending::invoke_init_external_call;
+    use debridge_solana_sdk::prelude::*;
 
     use super::*;
 
@@ -35,32 +36,19 @@ pub mod debridge_invoke_example {
     /// To send some token to other supported chain use [`debridge_solana_sdk::sending::invoke_debridge_send`]
     ///
     /// To check if the network is supported use [`debridge_solana_sdk::sending::is_chain_supported`]
-    pub fn send_via_debridge(
-        ctx: Context<SendViaDebridge>,
-        amount: u64,
-        target_chain_id: [u8; 32],
-        receiver: Vec<u8>,
-        is_use_asset_fee: bool,
-    ) -> Result<()> {
-        if !is_chain_supported(ctx.remaining_accounts, target_chain_id).map_err(|err| {
-            msg!(
-                "Failed to deserialize chain support info account. Inner error: {}",
-                err
-            );
-            ErrorCode::ChainSupportInfoDeserializingFailed
-        })? {
-            return Err(ErrorCode::ChainNotSupported.into());
-        }
-
-        let send_ix = SendIx {
-            target_chain_id,
-            receiver,
-            is_use_asset_fee,
-            amount,
-            submission_params: None,
-            referral_code: None,
-        };
-        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+    pub fn send_via_debridge(ctx: Context<SendViaDebridge>) -> Result<()> {
+        invoke_debridge_send(
+            SendIx {
+                target_chain_id: chain_ids::ETHEREUM_CHAIN_ID,
+                receiver: hex::decode("bd1e72155Ce24E57D0A026e0F7420D6559A7e651").unwrap(),
+                is_use_asset_fee: false,
+                amount: 1000,
+                submission_params: None,
+                referral_code: None,
+            },
+            ctx.remaining_accounts,
+        )
+        .map_err(|err| err.into())
     }
 
     /// Debridge protocol takes fix fee and transfer fee while sending liquidity.
