@@ -1,115 +1,100 @@
 extern crate core;
 
-use std::{env, str::FromStr};
-
-use solana_program::{program_error::ProgramError, pubkey::Pubkey};
-
-pub mod check_claiming;
-pub mod debridge_accounts;
-pub mod keys;
 pub mod reserved_flags;
+
+use solana_program::pubkey::Pubkey;
+
+/// This module is responsible for the ability
+/// to make on-chain send using the debridge infrastructure
 pub mod sending;
 
-//TODO: Create pubkey with procedure macros
-const DEBRIDGE_ID_RAW: &str = env!("DEBRIDGE_PROGRAM_PUBKEY");
-const SETTINGS_ID_RAW: &str = env!("SETTINGS_PROGRAM_PUBKEY");
-const EXECUTE_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [160, 89, 229, 51, 157, 62, 217, 174];
-const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
-const INIT_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [82, 77, 58, 138, 145, 157, 41, 253];
+/// This module is responsible for the ability
+/// to check on-chain that a claim has been made
+/// using the debridge infrastructure
+pub mod check_claiming;
 
-pub const SOLANA_CHAIN_ID: [u8; 32] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115,
-    111, 108,
-];
+/// This module is responsible for working with debridge accounts of the program,
+/// which can allow you to request meta-information necessary for sending. For
+/// example, is it possible to send to some network or what commission is set at the moment
+pub mod debridge_accounts;
+
+/// This module is responsible for working with debridge accounts pubkeys of the program,
+/// which can allow you to request meta-information necessary for sending. For
+/// example, is it possible to send to some network or what commission is set at the moment
+pub mod keys;
+
+/// Each chain has a special id, this module provides
+/// a chain id for all currently supported chains
+pub mod chain_ids;
+
+/// This crate gives general errors that may occur in the sdk using
+mod errors;
+
+/// This module is auxiliary in working with hash
+mod hash;
+
+pub use chain_ids::*;
+pub use errors::*;
+pub use hash::{HashAdapter, SolanaKeccak256};
+
+// This code exports the public keys of the program, depending on the crate features.
+// The `prod` feature is enabled by default. If you want to interact with the prod environment, please do nothing.
+//
+// If you need access to the debridge test\devnet environment, contact the team to provide keys and use the `env` cargo-feature
+cfg_match::cfg_match! {
+    feature = "prod" => {
+        // This feature is used by default.
+        // If you just want to connect to the production environment, then it will use hardcoded keys
+
+        mod debridge {
+             solana_program::declare_id!("DEbrdGj3HsRsAzx6uH4MKyREKxVAfBydijLUF3ygsFfh");
+        }
+        /// Program of debridge program
+        /// This program is responsible for sending and claiming submission
+        pub static DEBRIDGE_ID: Pubkey = debridge::ID;
+
+        mod settings {
+            solana_program::declare_id!("DeSetTwWhjZq6Pz9Kfdo1KoS5NqtsM6G8ERbX4SSCSft");
+        }
+        /// Program of debridge-settings program
+        /// This program is responsible for settings of debridge protocol & storing confirmations
+        pub static SETTINGS_ID: Pubkey = settings::ID;
+    }
+    feature = "env" => {
+        // If you use some custom keys to test in devnet\mainnet environment, you can pass the keys via env variables.
+        // To do this, build a project with the feature `env` and without `prod`
+
+        /// Program of debridge program
+        /// This program is responsible for sending and claiming submission
+        pub const DEBRIDGE_ID: Pubkey =
+            Pubkey::new_from_array(env_to_array::bs58_env_to_array!("DEBRIDGE_PROGRAM_PUBKEY"));
+
+        /// Program of debridge-settings program
+        /// This program is responsible for settings of debridge protocol & storing confirmations
+        pub const SETTINGS_ID: Pubkey =
+            Pubkey::new_from_array(env_to_array::bs58_env_to_array!("DEBRIDGE_SETTINGS_PROGRAM_PUBKEY"));
+    }
+    _ => {}
+}
+
+pub mod prelude {
+    pub use super::check_claiming as debridge_check_claiming;
+    pub use super::sending as debridge_sending;
+    pub use super::{DEBRIDGE_ID, SETTINGS_ID, SOLANA_CHAIN_ID};
+    pub use super::chain_ids;
+}
+
 pub const BPS_DENOMINATOR: u64 = 10000_u64;
 
-#[derive(Debug, thiserror::Error, PartialEq)]
-pub enum Error {
-    #[error(
-        "Wrong parent ix. This method must be called by debridge program in execute_external call"
-    )]
-    WrongClaimParentInstruction,
-    #[error("Wrong parent ix accounts. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentInstructionAccounts,
-    #[error("Wrong parent ix submission. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentSubmission,
-    #[error("Wrong parent debridge-submission authority. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentSubmissionAuth,
-    #[error("Wrong parent debridge-submission native sender. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentNativeSender,
-    #[error("Wrong parent debridge-submission source chain id. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentSourceChainId,
-    #[error("Wrong parent ix program id. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentProgramId,
-    #[error("Failed while account deserializing")]
-    AccountDeserializeError,
-    #[error("Provided account with wrong discriminator")]
-    WrongAccountDiscriminator,
-    #[error("Account with such index not exist. Please create account list with debridge sdk")]
-    WrongAccountIndex,
-    #[error("Provided ChainSupportInfo for other target chain id. Please create account list with debridge sdk")]
-    WrongChainSupportInfo,
-    #[error("Provided target chain id not supported")]
-    TargetChainNotSupported,
-    #[error("Provided BridgeFee for other target chain id or other token mint. Please create account list with debridge sdk")]
-    WrongBridgeFeeInfo,
-    #[error("Failed to find state account in provided accounts. Please create account list with debridge sdk")]
-    WrongState,
-    #[error("Failed to borrow account data")]
-    AccountBorrowFailing,
-    #[error("Asset fee not supported")]
-    AssetFeeNotSupported,
-    #[error("Amount too big for sending. Adding fee overflow max sending amount")]
-    AmountOverflowedWhileAddingFee,
-    #[error("Provided wrong setting program id")]
-    WrongSettingProgramId,
-    #[error("Provided wrong debridge program id")]
-    WrongDebridgeProgramId,
-    #[error("Provided external storage with wrong. External storage have to be not initialized or be in Transferred state")]
-    ExternalStorageWrongState,
-}
-
-pub enum InvokeError {
-    SdkError(Error),
-    SolanaProgramError(ProgramError),
-}
-
-impl From<Error> for InvokeError {
-    fn from(err: Error) -> Self {
-        InvokeError::SdkError(err)
+// Checking that multiple environments cannot be enabled at the same time
+macro_rules! assert_unique_feature {
+    () => {};
+    ($first:tt $(,$rest:tt)*) => {
+        $(
+            #[cfg(all(feature = $first, feature = $rest))]
+            compile_error!(concat!("features \"", $first, "\" and \"", $rest, "\" cannot be used together"));
+        )*
+        assert_unique_feature!($($rest),*);
     }
 }
-
-impl From<ProgramError> for InvokeError {
-    fn from(err: ProgramError) -> Self {
-        InvokeError::SolanaProgramError(err)
-    }
-}
-
-impl From<InvokeError> for ProgramError {
-    fn from(err: InvokeError) -> Self {
-        match err {
-            InvokeError::SdkError(err) => err.into(),
-            InvokeError::SolanaProgramError(err) => err,
-        }
-    }
-}
-
-pub trait HashAdapter {
-    fn hash(input: &[u8]) -> [u8; 32];
-}
-
-impl HashAdapter for sha3::Keccak256 {
-    fn hash(input: &[u8]) -> [u8; 32] {
-        use sha3::Digest;
-        Self::digest(input).as_slice().try_into().unwrap()
-    }
-}
-
-pub fn get_debridge_id() -> Pubkey {
-    Pubkey::from_str(DEBRIDGE_ID_RAW).unwrap()
-}
-
-pub fn get_settings_id() -> Pubkey {
-    Pubkey::from_str(SETTINGS_ID_RAW).unwrap()
-}
+assert_unique_feature!("prod", "env");

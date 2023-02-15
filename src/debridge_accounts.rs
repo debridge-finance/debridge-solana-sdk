@@ -3,6 +3,11 @@ use solana_program::account_info::AccountInfo;
 
 use crate::{Error, Pubkey};
 
+pub const EXECUTE_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [160, 89, 229, 51, 157, 62, 217, 174];
+pub const SEND_DISCRIMINATOR: [u8; 8] = [102, 251, 20, 187, 65, 75, 12, 69];
+pub const INIT_EXTERNAL_CALL_DISCRIMINATOR: [u8; 8] = [82, 77, 58, 138, 145, 157, 41, 253];
+
+/// Base anchor trait for account-data binary prefix
 trait Discriminator {
     fn discriminator() -> [u8; 8];
 }
@@ -32,14 +37,25 @@ impl<ACCOUNT: Discriminator + Sized + BorshSerialize + BorshDeserialize> TryFrom
     }
 }
 
+/// The existence of this account proves the fact that the transfer
+/// was made and it is confirmed on the network
+///
+/// It stores the claimer for validation when executing external data
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SubmissionAccount {
+    /// Pubkey claimed this transaction on the Solana network
     pub claimer: Pubkey,
+    /// The receiver of this debridge-transaction
     pub receiver: Pubkey,
+    /// The key that gives the right to cancel the transfer in the receiving network
     pub fallback_address: Pubkey,
+    /// The address of the token that was transferred to the given sumibssion
     pub token_mint: Pubkey,
+    /// Sending chain address of the sender of the message
     pub native_sender: Option<Vec<u8>>,
+    /// Sending chain id
     pub source_chain_id: [u8; 32],
+    /// Service information about pubkey of current account
     pub bump: u8,
 }
 
@@ -78,14 +94,16 @@ impl Discriminator for ChainSupportInfo {
     }
 }
 
+/// Status of settings program state
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub enum Status {
     Working,
+    /// Transfers are not possible at this state
     Paused,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
-pub struct ConfirmationParamsGuard {
+struct ConfirmationParamsGuard {
     current_timeslot: Option<u64>,
     submission_in_timeslot_count: u32,
     confirmation_threshold: u32,
@@ -94,6 +112,7 @@ pub struct ConfirmationParamsGuard {
     excess_confirmation_timeslot: u64,
 }
 
+/// Program Settings State
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub struct State {
     /// Current full protocol status
@@ -125,6 +144,7 @@ impl Discriminator for State {
     }
 }
 
+/// This account is responsible for checking if it is possible for this asset to pay a fee in token
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub struct AssetFeeInfo {
     pub bridge_fee_bump: u8,
@@ -144,6 +164,9 @@ impl Discriminator for AssetFeeInfo {
     }
 }
 
+/// To make a transfer within debridge infrastructure,
+/// you need a bridge. This account represents the information
+/// we store for each bridge
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub struct Bridge {
     /// Maximum amount to transfer
@@ -174,6 +197,7 @@ impl Bridge {
     pub const SEED: &'static [u8] = b"BRIDGE";
 }
 
+/// This structure shows if this bridge is currently working
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub enum BridgeState {
     Work,

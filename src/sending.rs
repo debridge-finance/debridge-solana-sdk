@@ -7,13 +7,16 @@ use solana_program::{
     program_error::ProgramError,
 };
 
+use crate::hash::HashAdapter;
 use crate::{
-    debridge_accounts::{AssetFeeInfo, ChainSupportInfo, ExternalCallMeta, State, TryFromAccount},
-    get_debridge_id,
+    debridge_accounts::{
+        AssetFeeInfo, ChainSupportInfo, ExternalCallMeta, State, TryFromAccount,
+        INIT_EXTERNAL_CALL_DISCRIMINATOR, SEND_DISCRIMINATOR,
+    },
     keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
     reserved_flags::SetReservedFlag,
-    Error, HashAdapter, InvokeError, Pubkey, BPS_DENOMINATOR, INIT_EXTERNAL_CALL_DISCRIMINATOR,
-    SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
+    Error, Pubkey, SolanaKeccak256, BPS_DENOMINATOR, DEBRIDGE_ID, SOLANA_CHAIN_ID,
+    errors::InvokeError,
 };
 
 /// Struct for forming send instruction in debridge program
@@ -56,7 +59,7 @@ impl SendSubmissionParamsInput {
             execution_fee,
             reserved_flag: [0; 32],
             fallback_address: vec![0; 20],
-            external_call_shortcut: sha3::Keccak256::hash(&[]),
+            external_call_shortcut: SolanaKeccak256::hash(&[]),
         }
     }
 
@@ -77,7 +80,7 @@ impl SendSubmissionParamsInput {
             execution_fee,
             reserved_flag,
             fallback_address,
-            external_call_shortcut: sha3::Keccak256::hash(external_call.as_slice()),
+            external_call_shortcut: SolanaKeccak256::hash(external_call.as_slice()),
         }
     }
 
@@ -100,7 +103,7 @@ impl SendSubmissionParamsInput {
             execution_fee,
             reserved_flag: reserved_flags,
             fallback_address,
-            external_call_shortcut: sha3::Keccak256::hash(external_call.as_slice()),
+            external_call_shortcut: SolanaKeccak256::hash(external_call.as_slice()),
         }
     }
 }
@@ -117,13 +120,13 @@ pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> P
 
     if account_infos[SEND_META_TEMPLATE.len() - 1]
         .key
-        .ne(&get_debridge_id())
+        .ne(&DEBRIDGE_ID)
     {
         return Err(Error::WrongDebridgeProgramId.into());
     }
 
     let ix = Instruction {
-        program_id: get_debridge_id(),
+        program_id: DEBRIDGE_ID,
         accounts: account_infos
             .iter()
             .take(SEND_META_TEMPLATE.len())
@@ -165,19 +168,17 @@ pub struct InitExternalCallIx {
 pub fn invoke_init_external_call(
     external_call: &[u8],
     account_infos: &[AccountInfo],
-) -> Result<(), InvokeError> {
-    let _external_call_shortcut = sha3::Keccak256::hash(external_call);
-
+) -> Result<(), ProgramError> {
     let external_call_storage = account_infos[EXTERNAL_CALL_STORAGE_INDEX].clone();
     let external_call_meta = account_infos[EXTERNAL_CALL_META_INDEX].clone();
     let send_from = account_infos[SEND_FROM_INDEX].clone();
     let system_program = account_infos[SYSTEM_PROGRAM_INDEX].clone();
     let debridge_program = account_infos[DEBRIDGE_PROGRAM_INDEX].clone();
 
-    if external_call_meta.owner.eq(&get_debridge_id()) {
+    if external_call_meta.owner.eq(&DEBRIDGE_ID) {
         return match ExternalCallMeta::try_from_account(&external_call_meta)? {
             ExternalCallMeta::Transferred { .. } => Ok(()),
-            _ => Err(InvokeError::SdkError(Error::ExternalStorageWrongState)),
+            _ => Err(InvokeError::SdkError(Error::ExternalStorageWrongState).into()),
         };
     }
 
@@ -206,13 +207,13 @@ pub fn invoke_init_external_call(
 
     invoke(
         &Instruction::new_with_bytes(
-            get_debridge_id(),
+            DEBRIDGE_ID,
             &[
                 INIT_EXTERNAL_CALL_DISCRIMINATOR.as_slice(),
                 InitExternalCallIx {
                     external_call_len: external_call.len() as u32,
                     chain_id: SOLANA_CHAIN_ID,
-                    external_call_shortcut: sha3::Keccak256::hash(external_call),
+                    external_call_shortcut: SolanaKeccak256::hash(external_call),
                     external_call: external_call.to_vec(),
                 }
                 .try_to_vec()
@@ -230,6 +231,7 @@ pub fn invoke_init_external_call(
             debridge_program,
         ],
     )?;
+
     Ok(())
 }
 
