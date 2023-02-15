@@ -1,9 +1,13 @@
 [package]
-name = "debridge-sdk"
-version = "0.1.0"
+name = "debridge-solana-sdk"
+version = "0.0.0"
+publish = false
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-solana-program = "1.10.41"
+solana-program = "=1.14.6"
+borsh = "0.9.1"
+hex = "0.4.3"
+thiserror = "1.0.30"
+lazy_static = "1.4.0"
+sha3 = "0.10.6"

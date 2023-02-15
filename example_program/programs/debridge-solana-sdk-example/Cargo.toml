@@ -1,0 +1,22 @@
+[package]
+name = "debridge-solana-sdk-example"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "debridge_solana_sdk_example"
+doctest = false
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.26.0"
+
+debridge-solana-sdk = {path = "../../../"}
