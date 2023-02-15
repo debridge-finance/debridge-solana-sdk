@@ -1,6 +1,6 @@
 #![allow(clippy::result_large_err)]
 
-use anchor_lang::{error::Error as AnchorError, prelude::*, solana_program::sysvar};
+use anchor_lang::{prelude::*, solana_program::sysvar};
 use debridge_solana_sdk::{
     check_claiming::check_execution_context,
     sending::{
@@ -22,8 +22,7 @@ pub mod debridge_invoke_example {
         FailedToCalculateAmountWithFee,
     }
 
-    use anchor_lang::solana_program;
-    use anchor_lang::solana_program::program_error::ProgramError;
+    use anchor_lang::{solana_program, solana_program::program_error::ProgramError};
     use debridge_solana_sdk::sending::invoke_init_external_call;
 
     use super::*;
@@ -265,7 +264,7 @@ pub mod debridge_invoke_example {
             fallback_address,
             ctx.remaining_accounts,
         )
-        .map_err(|err| ProgramError::from(err))?;
+        .map_err(ProgramError::from)?;
 
         Ok(())
     }

@@ -6,10 +6,7 @@ use debridge_solana_sdk_example::{instruction::SendViaDebridgeWithExternalCall, 
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
 use solana_program::instruction::{AccountMeta, Instruction};
 use solana_sdk::{
-    pubkey::Pubkey,
-    signature::Signer,
-    signer::keypair::{read_keypair_file, Keypair},
-    transaction::Transaction,
+    pubkey::Pubkey, signature::Signer, signer::keypair::read_keypair_file, transaction::Transaction,
 };
 
 fn get_send_acount(payer: Pubkey, wallet: Pubkey, shortcut: [u8; 32]) -> [AccountMeta; 18] {

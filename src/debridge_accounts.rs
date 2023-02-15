@@ -179,3 +179,28 @@ pub enum BridgeState {
     Work,
     Paused,
 }
+
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
+pub enum ExternalCallMeta {
+    Accumulation {
+        external_call_len: u64,
+    },
+    Execution {
+        /// Offset to start external call
+        offset: u64,
+        external_call_len: u64,
+        submission_auth_bump: u8,
+    },
+    Transferred {
+        last_transfer_time: i64,
+    },
+    Executed,
+    Failed,
+}
+
+const EXTERNAL_CALL_META_DISCRIMINATOR: [u8; 8] = [52, 154, 212, 31, 208, 203, 151, 253];
+impl Discriminator for ExternalCallMeta {
+    fn discriminator() -> [u8; 8] {
+        EXTERNAL_CALL_META_DISCRIMINATOR
+    }
+}
