@@ -27,8 +27,8 @@ pub mod debridge_invoke_example {
     }
 
     use anchor_lang::solana_program::program_error::ProgramError;
-    use debridge_solana_sdk::sending::invoke_init_external_call;
     use debridge_solana_sdk::prelude::*;
+    use debridge_solana_sdk::sending::invoke_init_external_call;
 
     use super::*;
 
@@ -40,7 +40,8 @@ pub mod debridge_invoke_example {
         invoke_debridge_send(
             SendIx {
                 target_chain_id: chain_ids::ETHEREUM_CHAIN_ID,
-                receiver: hex::decode("bd1e72155Ce24E57D0A026e0F7420D6559A7e651").unwrap(),
+                receiver: env_to_array::hex_to_array!("bd1e72155Ce24E57D0A026e0F7420D6559A7e651")
+                    .to_vec(),
                 is_use_asset_fee: false,
                 amount: 1000,
                 submission_params: None,
@@ -211,8 +212,11 @@ pub mod debridge_invoke_example {
         reserved_flag: [u8; 32],
         external_call: Vec<u8>,
     ) -> Result<()> {
-        invoke_init_external_call(external_call.as_slice(), ctx.remaining_accounts)
-            .map_err(program_error::ProgramError::from)?;
+        debridge_sending::invoke_init_external_call(
+            external_call.as_slice(),
+            ctx.remaining_accounts,
+        )
+        .map_err(AnchorError::from)?;
 
         let send_ix = SendIx {
             target_chain_id,
