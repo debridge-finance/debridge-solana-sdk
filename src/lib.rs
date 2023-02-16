@@ -46,19 +46,15 @@ cfg_match::cfg_match! {
         // This feature is used by default.
         // If you just want to connect to the production environment, then it will use hardcoded keys
 
-        mod debridge {
-             solana_program::declare_id!("DEbrdGj3HsRsAzx6uH4MKyREKxVAfBydijLUF3ygsFfh");
-        }
         /// Program of debridge program
         /// This program is responsible for sending and claiming submission
-        pub static DEBRIDGE_ID: Pubkey = debridge::ID;
+        pub static DEBRIDGE_ID: Pubkey =
+            Pubkey::new_from_array(env_to_array::bs58_to_array!("DEbrdGj3HsRsAzx6uH4MKyREKxVAfBydijLUF3ygsFfh"));
 
-        mod settings {
-            solana_program::declare_id!("DeSetTwWhjZq6Pz9Kfdo1KoS5NqtsM6G8ERbX4SSCSft");
-        }
         /// Program of debridge-settings program
         /// This program is responsible for settings of debridge protocol & storing confirmations
-        pub static SETTINGS_ID: Pubkey = settings::ID;
+        pub static SETTINGS_ID: Pubkey =
+            Pubkey::new_from_array(env_to_array::bs58_to_array!("DeSetTwWhjZq6Pz9Kfdo1KoS5NqtsM6G8ERbX4SSCSft"));
     }
     feature = "env" => {
         // If you use some custom keys to test in devnet\mainnet environment, you can pass the keys via env variables.
@@ -78,10 +74,10 @@ cfg_match::cfg_match! {
 }
 
 pub mod prelude {
+    pub use super::chain_ids;
     pub use super::check_claiming as debridge_check_claiming;
     pub use super::sending as debridge_sending;
     pub use super::{DEBRIDGE_ID, SETTINGS_ID, SOLANA_CHAIN_ID};
-    pub use super::chain_ids;
 }
 
 pub const BPS_DENOMINATOR: u64 = 10000_u64;
