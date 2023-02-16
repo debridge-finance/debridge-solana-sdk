@@ -969,6 +969,7 @@ version = "0.0.0"
 dependencies = [
  "anchor-lang",
  "debridge-solana-sdk",
+ "env_to_array",
 ]
 
 [[package]]
@@ -1196,9 +1197,9 @@ dependencies = [
 
 [[package]]
 name = "env_to_array"
-version = "0.0.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a68eb1c66253e63d7378816b65ec942277bb2afd4fbf16c99d99db9b34c890e"
+checksum = "6a68aceef61eb0f14225f54a8b5f4df0fe3b03597a88f7c22bf853e95507780a"
 dependencies = [
  "base64 0.13.1",
  "bs58 0.4.0",

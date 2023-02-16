@@ -18,5 +18,5 @@ default = []
 
 [dependencies]
 anchor-lang = "0.26.0"
-
+env_to_array = "0.1.1"
 debridge-solana-sdk = {path = "../../../"}
