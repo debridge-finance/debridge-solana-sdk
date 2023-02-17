@@ -45,7 +45,7 @@ pub mod send_via_debridge {
     pub fn send_via_debridge(ctx: Context<SendViaDebridge>) -> Result<()> {
         invoke_debridge_send(
             SendIx {
-                target_chain_id: chain_ids::ETHEREUM_CHAIN_ID,
+                target_chain_id: chain_ids::POLYGON_CHAIN_ID,
                 receiver: hex::decode("bd1e72155Ce24E57D0A026e0F7420D6559A7e651").unwrap(),
                 is_use_asset_fee: false,
                 amount: 1000,
