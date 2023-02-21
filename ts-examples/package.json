@@ -1,0 +1,29 @@
+{
+  "name": "ts-examples",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "deBridge",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "*",
+    "eslint-config-airbnb-base": "*",
+    "eslint-config-airbnb-typescript": "*",
+    "eslint-config-prettier": "*",
+    "eslint-loader": "*",
+    "eslint-plugin-eslint-comments": "*",
+    "eslint-plugin-import": "*",
+    "eslint-plugin-prettier": "*",
+    "typescript": "^4.9.5"
+  },
+  "scripts": {
+    "lint": "eslint --config .eslintrc \"examples/**/*.{js,ts}\"",
+    "lint:fix": "eslint --config .eslintrc \"examples/**/*.{js,ts}\" --fix"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.26.0",
+    "@debridge-finance/solana-contracts-client": "../../solana-contracts-client",
+    "@debridge-finance/solana-utils": "^3.0.0",
+    "@solana/web3.js": "^1.73.2",
+    "dotenv": "^16.0.3"
+  }
+}
