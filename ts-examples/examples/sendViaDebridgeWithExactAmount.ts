@@ -1,131 +1,78 @@
+/* eslint-disable no-console */
 import { BN } from "@coral-xyz/anchor";
-import { DeBridgeSolanaClient } from "@debridge-finance/solana-contracts-client";
+import { crypto, helpers } from "@debridge-finance/solana-utils";
+import { AccountMeta } from "@solana/web3.js";
+
 import {
-  constants,
-  crypto,
-  findAssociatedTokenAddress,
-  helpers,
-  TOKEN_PROGRAM_ID,
-  WRAPPED_SOL_MINT,
-} from "@debridge-finance/solana-utils";
-import { AccountMeta, PublicKey, SystemProgram } from "@solana/web3.js";
+  buildSendContextManual,
+  buildSendContextWithClient,
+  DefaultArgs,
+  initAll,
+  ParseBN,
+  ParseBool,
+  prepareDefaultParser,
+  sendTransaction,
+} from "./helpers";
 
-import { formatRemainingAccounts, initAll } from "./helpers";
+function parseArgs() {
+  const parser = prepareDefaultParser();
+  parser.add_argument("-useAssetFee", "--assetFee", {
+    required: false,
+    default: false,
+    choices: ["false", "true"],
+    action: ParseBool,
+  });
+  parser.add_argument("-executionFee", "--execFee", { required: true, action: ParseBN });
+  const parsed = parser.parse_args();
+  type ParsedType = DefaultArgs & {
+    useAssetFee: boolean;
+    executionFee: BN;
+  };
 
-async function buildSendContextManual(
-  deBridge: DeBridgeSolanaClient,
-  sender: PublicKey,
-  tokenMint: PublicKey,
-  chainTo: number,
-  extCallShortcut: Buffer,
-) {
-  const [bridge] = deBridge.accountsResolver.getBridgeAddress(tokenMint);
-  const [mintAuthority] = deBridge.accountsResolver.getMintAuthorityAddress(bridge);
-  const [stakingWallet] = findAssociatedTokenAddress(mintAuthority, tokenMint);
-  const [stateAddress] = deBridge.accountsResolver.getStateAddress();
-  const [chainSupportInfo] = deBridge.accountsResolver.getChainSupportInfoAddress(chainTo);
-  const state = await deBridge.getStateSafe();
-  const feeBeneficiary = state.feeBeneficiary;
-  const [storage] = deBridge.accountsResolver.getExternalCallStorageAddress(
-    extCallShortcut,
-    sender,
-    constants.SOLANA_CHAIN_ID,
-  );
-  const [meta] = deBridge.accountsResolver.getExternalCallMetaAddress(storage);
-  const [sendFromWallet] = findAssociatedTokenAddress(sender, tokenMint);
-  const [nonceAddress] = deBridge.accountsResolver.getNonceAddress();
-  let [discount] = deBridge.accountsResolver.getDiscountInfoAddress(sender);
-  if ((await deBridge.getDiscountInfoSafe(discount)) === null) {
-    [discount] = deBridge.accountsResolver.getNoDiscountAddress();
-  }
-  let [bridgeFee] = deBridge.accountsResolver.getBridgeFeeAddress(bridge, chainTo);
-  try {
-    const feeInfo = await deBridge.getBridgeFeeSafe(bridgeFee);
-  } catch (e) {
-    [bridgeFee] = deBridge.accountsResolver.getNoBridgeFeeAddress();
-  }
-
-  const remainingAccounts: AccountMeta[] = [
-    { isSigner: false, isWritable: true, pubkey: bridge },
-    { isSigner: false, isWritable: true, pubkey: tokenMint },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: stakingWallet,
-    },
-    { isSigner: false, isWritable: false, pubkey: mintAuthority },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: chainSupportInfo,
-    },
-    { isSigner: false, isWritable: false, pubkey: deBridge.settingsProgram.programId },
-    { isSigner: false, isWritable: false, pubkey: TOKEN_PROGRAM_ID },
-    { isSigner: false, isWritable: true, pubkey: stateAddress },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: feeBeneficiary,
-    },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: nonceAddress,
-    },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: sendFromWallet,
-    },
-    { isSigner: false, isWritable: false, pubkey: SystemProgram.programId },
-    { isSigner: false, isWritable: true, pubkey: storage },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: meta,
-    },
-    { isSigner: true, isWritable: true, pubkey: sender },
-    { isSigner: false, isWritable: false, pubkey: discount },
-    { isSigner: false, isWritable: false, pubkey: bridgeFee },
-    { isSigner: false, isWritable: false, pubkey: deBridge.program.programId },
-  ];
-
-  return remainingAccounts;
+  return parsed as ParsedType;
 }
 
 async function main() {
   const { connection, wallet, example, deBridge } = initAll();
-
-  const amount = 100;
-  const receiver = "";
-  const targetChain = 137;
-  const executionFee = 123;
-  const sendingContext = await deBridge.buildSendContext(
-    wallet.publicKey,
-    null,
-    WRAPPED_SOL_MINT,
-    receiver,
-    targetChain,
-    true,
-    receiver,
-  );
+  const parsed = parseArgs();
 
   const builder = example.methods.sendViaDebridgeWithExactAmount(
-    new BN(amount),
-    Array.from(crypto.normalizeChainId(targetChain)),
-    helpers.hexToBuffer(receiver),
-    new BN(executionFee),
-    false,
+    parsed.amount,
+    Array.from(crypto.normalizeChainId(parsed.targetChain)),
+    helpers.hexToBuffer(parsed.receiver),
+    parsed.executionFee,
+    parsed.useAssetFee,
   );
-  builder.remainingAccounts(formatRemainingAccounts(deBridge, sendingContext));
-  const tx = await builder.transaction();
-  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("finalized");
-  tx.recentBlockhash = blockhash;
-  tx.lastValidBlockHeight = lastValidBlockHeight;
-  await wallet.signTransaction(tx);
+  let remainingAccounts: AccountMeta[];
+  switch (parsed.mode) {
+    case "manual": {
+      remainingAccounts = await buildSendContextManual(
+        deBridge,
+        wallet.publicKey,
+        parsed.tokenMint,
+        parsed.targetChain,
+        crypto.hashExternalCallBytes(),
+      );
+      break;
+    }
+    case "client": {
+      remainingAccounts = await buildSendContextWithClient(
+        deBridge,
+        wallet.publicKey,
+        parsed.tokenMint,
+        parsed.receiver,
+        parsed.targetChain,
+        parsed.useAssetFee,
+      );
+      break;
+    }
+    default: {
+      throw new Error("unkown mode");
+    }
+  }
+  builder.remainingAccounts(remainingAccounts);
 
-  const txId = await connection.sendRawTransaction(tx.serialize());
-  console.log(`Sent tx: ${txId}`);
+  await sendTransaction(await builder.transaction(), connection, wallet);
 }
 
 main().catch(console.error);

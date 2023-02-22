@@ -4,7 +4,7 @@
         "moduleResolution": "node",
         "module": "commonjs",
         "lib": ["ES2021.String"],
-        "types": ["mocha", "chai", "node"],
+        "types": ["node"],
         "isolatedModules": false
     },
     "include": ["examples"],

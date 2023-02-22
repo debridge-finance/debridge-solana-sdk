@@ -5,6 +5,7 @@
   "author": "deBridge",
   "license": "MIT",
   "devDependencies": {
+    "@types/argparse": "^2.0.10",
     "eslint": "*",
     "eslint-config-airbnb-base": "*",
     "eslint-config-airbnb-typescript": "*",
@@ -24,6 +25,8 @@
     "@debridge-finance/solana-contracts-client": "../../solana-contracts-client",
     "@debridge-finance/solana-utils": "^3.0.0",
     "@solana/web3.js": "^1.73.2",
-    "dotenv": "^16.0.3"
+    "argparse": "^2.0.1",
+    "dotenv": "^16.0.3",
+    "ts-node": "^10.9.1"
   }
 }
