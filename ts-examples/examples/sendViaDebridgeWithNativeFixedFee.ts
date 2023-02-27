@@ -1,59 +1,27 @@
 /* eslint-disable no-console */
 import { crypto, helpers } from "@debridge-finance/solana-utils";
-import { AccountMeta } from "@solana/web3.js";
 
-import {
-  buildSendContextManual,
-  buildSendContextWithClient,
-  DefaultArgs,
-  initAll,
-  prepareDefaultParser,
-  sendTransaction,
-} from "./helpers";
-
-function parseArgs() {
-  const parser = prepareDefaultParser();
-  const parsed = parser.parse_args();
-
-  return parsed as DefaultArgs;
-}
+import { buildSendContext } from "./contextBuilding";
+import { initAll, sendTransaction, getDefaultArgs } from "./helpers";
 
 async function main() {
   const { connection, wallet, example, deBridge } = initAll();
-  const parsed = parseArgs();
+  const parsed = getDefaultArgs();
   const builder = example.methods.sendViaDebridgeWithNativeFixedFee(
     parsed.amount,
     Array.from(crypto.normalizeChainId(parsed.targetChain)),
     helpers.hexToBuffer(parsed.receiver),
   );
 
-  let remainingAccounts: AccountMeta[];
-  switch (parsed.mode) {
-    case "manual": {
-      remainingAccounts = await buildSendContextManual(
-        deBridge,
-        wallet.publicKey,
-        parsed.tokenMint,
-        parsed.targetChain,
-        crypto.hashExternalCallBytes(),
-      );
-      break;
-    }
-    case "client": {
-      remainingAccounts = await buildSendContextWithClient(
-        deBridge,
-        wallet.publicKey,
-        parsed.tokenMint,
-        parsed.receiver,
-        parsed.targetChain,
-        false,
-      );
-      break;
-    }
-    default: {
-      throw new Error("unkown mode");
-    }
-  }
+  const remainingAccounts = await buildSendContext(
+    deBridge,
+    wallet.publicKey,
+    parsed.tokenMint,
+    parsed.targetChain,
+    parsed.receiver,
+    false,
+    parsed.mode,
+  );
   builder.remainingAccounts(remainingAccounts);
   await sendTransaction(await builder.transaction(), connection, wallet);
 }

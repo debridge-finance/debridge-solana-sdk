@@ -1,18 +1,11 @@
 /* eslint-disable no-console */
 import { BN } from "@coral-xyz/anchor";
 import { crypto, helpers } from "@debridge-finance/solana-utils";
-import { AccountMeta, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { ArgumentParser } from "argparse";
 
-import {
-  buildSendContextManual,
-  buildSendContextWithClient,
-  initAll,
-  ParseBN,
-  ParseHex,
-  ParsePubkey,
-  sendTransaction,
-} from "./helpers";
+import { buildSendContext } from "./contextBuilding";
+import { initAll, ParseBN, ParseHex, ParsePubkey, sendTransaction } from "./helpers";
 
 function parseArgs() {
   const parser = new ArgumentParser();
@@ -53,38 +46,20 @@ async function main() {
     parsed.data,
   );
 
-  let remainingAccounts: AccountMeta[];
-  switch (parsed.mode) {
-    case "manual": {
-      remainingAccounts = await buildSendContextManual(
-        deBridge,
-        wallet.publicKey,
-        parsed.tokenMint,
-        parsed.targetChain,
-        crypto.hashExternalCallBytes(parsed.data),
-      );
-      break;
-    }
-    case "client": {
-      remainingAccounts = await buildSendContextWithClient(
-        deBridge,
-        wallet.publicKey,
-        parsed.tokenMint,
-        parsed.receiver,
-        parsed.targetChain,
-        false,
-        {
-          data: parsed.data,
-          flags: 0,
-          fallbackAddress: parsed.fallbackAddress,
-        },
-      );
-      break;
-    }
-    default: {
-      throw new Error("unkown mode");
-    }
-  }
+  const remainingAccounts = await buildSendContext(
+    deBridge,
+    wallet.publicKey,
+    parsed.tokenMint,
+    parsed.targetChain,
+    parsed.receiver,
+    false,
+    parsed.mode,
+    {
+      data: parsed.data,
+      flags: 0,
+      fallbackAddress: parsed.fallbackAddress,
+    },
+  );
   builder.remainingAccounts(remainingAccounts);
   await sendTransaction(await builder.transaction(), connection, wallet);
 }
