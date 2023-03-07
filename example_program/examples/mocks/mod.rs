@@ -5,7 +5,7 @@ use debridge_solana_sdk::{
     Error,
 };
 use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
-pub fn get_send_acount(
+pub fn get_send_account(
     payer: Pubkey,
     wallet: Pubkey,
     shortcut: [u8; 32],

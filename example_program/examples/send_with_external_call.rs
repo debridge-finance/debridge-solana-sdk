@@ -9,7 +9,7 @@ use solana_sdk::{
     pubkey::Pubkey, signature::Signer, signer::keypair::read_keypair_file, transaction::Transaction,
 };
 
-use crate::mocks::get_send_acount;
+use crate::mocks::get_send_account;
 
 mod mocks;
 
@@ -39,7 +39,7 @@ fn main() {
 
     let ix = Instruction {
         program_id: EXAMPLE_ID,
-        accounts: get_send_acount(
+        accounts: get_send_account(
             payer.pubkey(),
             wallet,
             sha3::Keccak256::hash(external_call.as_slice()),

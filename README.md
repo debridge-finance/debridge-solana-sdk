@@ -6,14 +6,14 @@ Debridge-solana-sdk allows you to easily and quickly connect your Solana program
 protocol enables decentralized transfers of arbitrary messages and value between various blockchains. See Debridge 
 documentation for more information https://docs.debridge.finance/.
 
-## Create simple message and value transfering to other chain
+## Create a simple message and value transferring to other chain
 
 This example show how you can send some tokens and message to any supported chain using debridge-solana-sdk crate.
 
-### Create new program with Anchor 
+### Create a new program with Anchor 
 
 Debridge-solana-sdk doesn't depend on any solana framework like Anchor and can be connected to any Solana program.
-But for simplifying example we will use example program built with Anchor
+But for simplifying example we will use example program built with Anchor.
 
 ```bash
 anchor init send-via-debridge
@@ -76,7 +76,7 @@ pub struct SendViaDebridge {}
 
 ### Build and deploy contract
 
-Before build test program need to provide Debrdige and Settings program pubkeys through enviroment variables.
+Before build test program need to provide Debridge and Settings program pubkeys through environment variables.
 ```bash
 export SETTINGS_PROGRAM_PUBKEY=DeSetTwWhjZq6Pz9Kfdo1KoS5NqtsM6G8ERbX4SSCSft
 export DEBRIDGE_PROGRAM_PUBKEY=DEbrdGj3HsRsAzx6uH4MKyREKxVAfBydijLUF3ygsFfh
