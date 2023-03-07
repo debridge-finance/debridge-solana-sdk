@@ -109,7 +109,7 @@ impl SendSubmissionParamsInput {
 ///
 /// # Arguments
 /// * `send_ix` - [`SendIx`] structure to send debridge instruction creation
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramResult {
     if account_infos.len() < SEND_META_TEMPLATE.len() {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -161,7 +161,7 @@ pub struct InitExternalCallIx {
 ///
 /// # Arguments
 /// * `external_call` - instructions sending in target chain
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 pub fn invoke_init_external_call(
     external_call: &[u8],
     account_infos: &[AccountInfo],
@@ -233,7 +233,7 @@ pub fn invoke_init_external_call(
     Ok(())
 }
 
-/// Send message to other chain without liqudity.
+/// Send message to other chain without liquidity.
 /// Perform debridge send flow with zero amount
 ///
 /// # Arguments
@@ -242,7 +242,7 @@ pub fn invoke_init_external_call(
 /// * `receiver` -
 /// * `execution_fee` - chain id to which the tokens are sent
 /// * `fallback_address` - reserve address for sending tokens if external call fails
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 pub fn invoke_send_message(
     external_call: Vec<u8>,
     target_chain_id: [u8; 32],
@@ -317,7 +317,7 @@ mod tests {
 /// Get State account structure from sending accounts
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 pub fn get_state(account_infos: &[AccountInfo]) -> Result<State, Error> {
     get_account_by_index(account_infos, STATE_INDEX)
 }
@@ -325,7 +325,7 @@ pub fn get_state(account_infos: &[AccountInfo]) -> Result<State, Error> {
 /// Get Chain Support info account  account structure from sending accounts
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn get_chain_support_info(
     account_infos: &[AccountInfo],
@@ -338,7 +338,7 @@ pub fn get_chain_support_info(
 /// Check that provided chain support info account refers to `target_chain_id`
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent}
 pub fn check_chain_support_info_account(
     account_infos: &[AccountInfo],
@@ -359,7 +359,7 @@ pub fn check_chain_support_info_account(
 /// Get Bridge asset fee info account account structure from sending accounts
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn get_asset_fee_info(
     account_infos: &[AccountInfo],
@@ -385,7 +385,7 @@ pub fn get_asset_fee_info(
 /// Parse account structure from sending accounts by index
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `account_index` - account index from sending accounts  
 pub fn get_account_by_index<T: TryFromAccount<Error = Error>>(
     account_infos: &[AccountInfo],
@@ -400,7 +400,7 @@ pub fn get_account_by_index<T: TryFromAccount<Error = Error>>(
 /// Check the possibility of sending to the chain by chain id
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn is_chain_supported(
     account_infos: &[AccountInfo],
@@ -417,7 +417,7 @@ pub fn is_chain_supported(
 /// Get transfer fee bps for sending current tokens to target chain id
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn get_transfer_fee(
     account_infos: &[AccountInfo],
@@ -434,7 +434,7 @@ pub fn get_transfer_fee(
 /// Get own transfer fee bps to target chain id if defined
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn get_transfer_fee_for_chain(
     account_infos: &[AccountInfo],
@@ -453,34 +453,34 @@ pub fn get_transfer_fee_for_chain(
 /// Get native fixed fee for sending to target chain id
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn get_chain_native_fix_fee(
-    reamining_accounts: &[AccountInfo],
+    remaining_accounts: &[AccountInfo],
     _target_chain_id: [u8; 32],
 ) -> Result<u64, Error> {
-    match get_chain_support_info(reamining_accounts, _target_chain_id)? {
-        ChainSupportInfo::NotSupported => get_default_native_fix_fee(reamining_accounts),
+    match get_chain_support_info(remaining_accounts, _target_chain_id)? {
+        ChainSupportInfo::NotSupported => get_default_native_fix_fee(remaining_accounts),
         ChainSupportInfo::Supported { fixed_fee, .. } => fixed_fee
             .map(Ok)
-            .unwrap_or_else(|| get_default_native_fix_fee(reamining_accounts)),
+            .unwrap_or_else(|| get_default_native_fix_fee(remaining_accounts)),
     }
 }
 
 /// Get default native fixed fee
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 pub fn get_default_native_fix_fee(account_infos: &[AccountInfo]) -> Result<u64, Error> {
     Ok(get_state(account_infos)?.global_fixed_fee)
 }
 
-/// Сhecks the availability of payment fixed fee in transfering tokens
+/// Checks the availability of payment fixed fee in transferring tokens
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
-pub fn is_asset_fee_avaliable(
+pub fn is_asset_fee_available(
     account_infos: &[AccountInfo],
     target_chain_id: [u8; 32],
 ) -> Result<bool, Error> {
@@ -494,7 +494,7 @@ pub fn is_asset_fee_avaliable(
 /// Try to get assets fixed fee for sending a current tokens to target chain id
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 pub fn try_get_chain_asset_fix_fee(
     account_infos: &[AccountInfo],
@@ -510,7 +510,7 @@ const OVERFLOW_ERR: Error = Error::AmountOverflowedWhileAddingFee;
 /// Add all fees that will be taken to receive exact amount
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 /// * `exact_amount` - amount that will be received in target chain
 /// * `execution_fee` - amount of execution fee
@@ -541,7 +541,7 @@ pub fn add_all_fees(
 /// Add transfer fee that will be taken to send exact amount to target chain
 ///
 /// # Arguments
-/// * `account_infos` - account forming by client from debridge-typesctipr-sdk
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
 /// * `target_chain_id` - chain id to which the tokens are sent
 /// * `exact_amount` - amount that will be send in target chain
 pub fn add_transfer_fee(

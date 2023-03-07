@@ -14,13 +14,13 @@ impl From<Error> for ProgramError {
 }
 
 /// Check that current instruction is called with [`solana_program::program::invoke_signed`]
-/// function during Debridge's `execute_external_call` instruciton call.
+/// function during Debridge's `execute_external_call` instruction call.
 /// Also this function can check `native_sender` (user who call send function in source chain).
 ///
 /// # Arguments
-/// * `instructions` - [`solana_program::sysvar::instructions::ID`] account for previus instruction checking
+/// * `instructions` - [`solana_program::sysvar::instructions::ID`] account for previous instruction checking
 /// * `submission` - Debridge account contains submission claiming information
-/// * `submission_authority` - Debridge authority with sign proof invoking from `execute_external_call` instruciton  
+/// * `submission_authority` - Debridge authority with sign proof invoking from `execute_external_call` instruction  
 /// * `source_chain_id` - the source chain from which the send was made
 /// * `native_sender` - initiator address of Debridge Send function call in source chain
 pub fn check_execution_context(
