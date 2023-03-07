@@ -82,8 +82,7 @@ impl CheckReservedFlag for &SendSubmissionParamsInput {
 
 #[cfg(test)]
 mod flag_test {
-    use crate::reserved_flags::CheckReservedFlag;
-    use crate::reserved_flags::SetReservedFlag;
+    use crate::reserved_flags::{CheckReservedFlag, SetReservedFlag};
 
     #[test]
     fn bit_test() {

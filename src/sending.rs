@@ -1,13 +1,3 @@
-use crate::debridge_accounts::ExternalCallMeta;
-use crate::reserved_flags::SetReservedFlag;
-use crate::InvokeError;
-use crate::{
-    debridge_accounts::{AssetFeeInfo, ChainSupportInfo, State, TryFromAccount},
-    get_debridge_id,
-    keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
-    Error, HashAdapter, Pubkey, BPS_DENOMINATOR, INIT_EXTERNAL_CALL_DISCRIMINATOR,
-    SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
-};
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::AccountInfo,
@@ -15,6 +5,15 @@ use solana_program::{
     instruction::{AccountMeta, Instruction},
     program::invoke,
     program_error::ProgramError,
+};
+
+use crate::{
+    debridge_accounts::{AssetFeeInfo, ChainSupportInfo, ExternalCallMeta, State, TryFromAccount},
+    get_debridge_id,
+    keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
+    reserved_flags::SetReservedFlag,
+    Error, HashAdapter, InvokeError, Pubkey, BPS_DENOMINATOR, INIT_EXTERNAL_CALL_DISCRIMINATOR,
+    SEND_DISCRIMINATOR, SOLANA_CHAIN_ID,
 };
 
 /// Struct for forming send instruction in debridge program
@@ -120,7 +119,7 @@ pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> P
         .key
         .ne(&get_debridge_id())
     {
-        return Err(Error::WrongDebridgeProgram.into());
+        return Err(Error::WrongDebridgeProgramId.into());
     }
 
     let ix = Instruction {
