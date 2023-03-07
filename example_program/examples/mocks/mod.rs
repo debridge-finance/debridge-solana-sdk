@@ -1,12 +1,17 @@
 use std::str::FromStr;
 
+use debridge_solana_sdk::{
+    keys::{ExternalCallMetaPubkey, ExternalCallStoragePubkey},
+    Error,
+};
 use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
-
-use crate::{find_external_call_meta_address, find_external_call_storage_address};
-
-pub fn get_send_acount(payer: Pubkey, wallet: Pubkey, shortcut: [u8; 32]) -> [AccountMeta; 18] {
-    let external_call_storage = find_external_call_storage_address(&shortcut, &payer).0;
-    [
+pub fn get_send_acount(
+    payer: Pubkey,
+    wallet: Pubkey,
+    shortcut: [u8; 32],
+) -> Result<[AccountMeta; 18], Error> {
+    let external_call_storage = Pubkey::find_external_call_storage_address(&shortcut, &payer)?.0;
+    Ok([
         AccountMeta {
             is_signer: false,
             is_writable: true,
@@ -86,7 +91,7 @@ pub fn get_send_acount(payer: Pubkey, wallet: Pubkey, shortcut: [u8; 32]) -> [Ac
         AccountMeta {
             is_signer: false,
             is_writable: true,
-            pubkey: find_external_call_meta_address(&external_call_storage).0,
+            pubkey: Pubkey::find_external_call_meta_address(&external_call_storage)?.0,
         },
         AccountMeta {
             is_signer: true,
@@ -111,5 +116,5 @@ pub fn get_send_acount(payer: Pubkey, wallet: Pubkey, shortcut: [u8; 32]) -> [Ac
             pubkey: Pubkey::from_str("DEbrdGj3HsRsAzx6uH4MKyREKxVAfBydijLUF3ygsFfh")
                 .expect("Failed to parse pubkey"),
         },
-    ]
+    ])
 }

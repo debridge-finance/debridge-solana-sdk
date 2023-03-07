@@ -1,10 +1,8 @@
 extern crate core;
 
-use std::env;
+use std::{env, str::FromStr};
 
-use solana_program::program_error::ProgramError;
-use solana_program::pubkey::Pubkey;
-use std::str::FromStr;
+use solana_program::{program_error::ProgramError, pubkey::Pubkey};
 
 pub mod check_claiming;
 pub mod debridge_accounts;
@@ -47,8 +45,6 @@ pub enum Error {
     AccountDeserializeError,
     #[error("Provided account with wrong discriminator")]
     WrongAccountDiscriminator,
-    #[error("Provided wrong debridge program id")]
-    WrongDebridgeProgram,
     #[error("Account with such index not exist. Please create account list with debridge sdk")]
     WrongAccountIndex,
     #[error("Provided ChainSupportInfo for other target chain id. Please create account list with debridge sdk")]
@@ -65,8 +61,10 @@ pub enum Error {
     AssetFeeNotSupported,
     #[error("Amount too big for sending. Adding fee overflow max sending amount")]
     AmountOverflowedWhileAddingFee,
-    #[error("Wrong ")]
+    #[error("Provided wrong setting program id")]
     WrongSettingProgramId,
+    #[error("Provided wrong debridge program id")]
+    WrongDebridgeProgramId,
     #[error("Provided external storage with wrong. External storage have to be not initialized or be in Transferred state")]
     ExternalStorageWrongState,
 }

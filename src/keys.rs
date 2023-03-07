@@ -4,7 +4,7 @@ use solana_program::pubkey::ParsePubkeyError;
 
 use crate::{
     debridge_accounts::{AssetFeeInfo, Bridge, ChainSupportInfo},
-    Error, Pubkey, SETTINGS_ID_RAW,
+    Error, Pubkey, DEBRIDGE_ID_RAW, SETTINGS_ID_RAW, SOLANA_CHAIN_ID,
 };
 
 pub trait ChainSupportInfoPubkey {
@@ -78,11 +78,12 @@ impl BridgePubkey for Pubkey {}
 
 #[cfg(test)]
 mod tests {
-    
-    
-    use crate::keys::ChainSupportInfoPubkey;
-    use solana_program::pubkey::Pubkey;
+
     use std::str::FromStr;
+
+    use solana_program::pubkey::Pubkey;
+
+    use crate::keys::ChainSupportInfoPubkey;
 
     #[test]
     fn find_chain_support_info_test() {
@@ -98,3 +99,66 @@ mod tests {
         );
     }
 }
+
+pub trait ExternalCallStoragePubkey {
+    fn find_external_call_storage_address(
+        shortcut: &[u8; 32],
+        owner: &Pubkey,
+    ) -> Result<(Pubkey, u8), Error> {
+        Ok(Pubkey::find_program_address(
+            &[
+                b"EXTERNAL_CALL_STORAGE",
+                shortcut,
+                owner.as_ref(),
+                &SOLANA_CHAIN_ID,
+            ],
+            &Pubkey::from_str(DEBRIDGE_ID_RAW).map_err(|_| Error::WrongDebridgeProgramId)?,
+        ))
+    }
+
+    fn create_external_call_storage_address(
+        shortcut: &[u8; 32],
+        owner: &Pubkey,
+        bump: u8,
+    ) -> Result<Option<Pubkey>, Error> {
+        Ok(Pubkey::create_program_address(
+            &[
+                b"EXTERNAL_CALL_STORAGE",
+                shortcut,
+                owner.as_ref(),
+                &SOLANA_CHAIN_ID,
+                &[bump],
+            ],
+            &Pubkey::from_str(DEBRIDGE_ID_RAW).map_err(|_| Error::WrongDebridgeProgramId)?,
+        )
+        .ok())
+    }
+}
+impl ExternalCallStoragePubkey for Pubkey {}
+
+pub trait ExternalCallMetaPubkey {
+    fn find_external_call_meta_address(
+        external_call_storage: &Pubkey,
+    ) -> Result<(Pubkey, u8), Error> {
+        Ok(Pubkey::find_program_address(
+            &[b"EXTERNAL_CALL_META", external_call_storage.as_ref()],
+            &Pubkey::from_str(DEBRIDGE_ID_RAW).map_err(|_| Error::WrongDebridgeProgramId)?,
+        ))
+    }
+
+    fn create_external_call_meta_address(
+        external_call_storage: &[u8; 32],
+        bump: u8,
+    ) -> Result<Option<Pubkey>, Error> {
+        Ok(Pubkey::create_program_address(
+            &[
+                b"EXTERNAL_CALL_META",
+                external_call_storage.as_ref(),
+                &[bump],
+            ],
+            &Pubkey::from_str(DEBRIDGE_ID_RAW).map_err(|_| Error::WrongDebridgeProgramId)?,
+        )
+        .ok())
+    }
+}
+impl ExternalCallMetaPubkey for Pubkey {}

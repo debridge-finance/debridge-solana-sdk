@@ -1,7 +1,7 @@
 use std::{env, str::FromStr};
 
 use anchor_lang::InstructionData;
-use debridge_solana_sdk::{HashAdapter, SOLANA_CHAIN_ID};
+use debridge_solana_sdk::HashAdapter;
 use debridge_solana_sdk_example::{instruction::SendViaDebridge, ID as EXAMPLE_ID};
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
 use solana_program::instruction::Instruction;
@@ -13,25 +13,6 @@ use solana_sdk::{
 use crate::mocks::get_send_acount;
 
 mod mocks;
-
-fn find_external_call_storage_address(shortcut: &[u8; 32], owner: &Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(
-        &[
-            b"EXTERNAL_CALL_STORAGE",
-            shortcut,
-            owner.as_ref(),
-            &SOLANA_CHAIN_ID,
-        ],
-        &debridge_solana_sdk::get_debridge_id(),
-    )
-}
-
-fn find_external_call_meta_address(external_call_storage: &Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(
-        &[b"EXTERNAL_CALL_META", external_call_storage.as_ref()],
-        &debridge_solana_sdk::get_debridge_id(),
-    )
-}
 
 fn main() {
     let rpc_client: RpcClient = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
@@ -62,6 +43,7 @@ fn main() {
             wallet,
             sha3::Keccak256::hash(message.as_slice()),
         )
+        .expect("Failed to create send accounts list")
         .to_vec(),
         data: SendViaDebridge {
             amount: 0,
