@@ -88,14 +88,13 @@ export async function sendTransaction(tx: Transaction, connection: Connection, w
   const serialized = tx.serialize();
   console.log(serialized.toString("base64"));
 
-  return "";
   const txId = await connection.sendRawTransaction(tx.serialize());
   console.log(`Sent tx: ${txId}`);
 }
 
 export function initAll() {
   config();
-  const requiredFields = ["DEBRIDGE", "SETTINGS", "EXAMPLE", "WALLET", "RPC"];
+  const requiredFields = ["DEBRIDGE", "SETTINGS", "EXAMPLE_ID", "WALLET", "RPC"];
   for (const field of requiredFields) {
     if (process.env[field] === undefined) throw new Error(`Field ${field} expected to be in .env`);
   }
@@ -105,7 +104,7 @@ export function initAll() {
   const connection = new Connection(process.env.RPC!);
   const program = new Program(
     IDL,
-    process.env.EXAMPLE!,
+    process.env.EXAMPLE_ID!,
     new AnchorProvider(connection, {} as unknown as AnchorWallet, {}),
   );
   const deBridge = new DeBridgeSolanaClient(connection, wallet, {
