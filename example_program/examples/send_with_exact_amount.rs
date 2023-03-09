@@ -43,7 +43,6 @@ fn main() {
             wallet,
             sha3::Keccak256::hash(message.as_slice()),
         )
-        .expect("Failed to create send accounts list")
         .to_vec(),
         data: SendViaDebridgeWithExactAmount {
             exact_amount: 100,

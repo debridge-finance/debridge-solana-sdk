@@ -2749,6 +2749,7 @@ dependencies = [
  "debridge-solana-sdk",
  "debridge-solana-sdk-example",
  "dirs",
+ "env_to_array",
  "hex",
  "log",
  "rstest",

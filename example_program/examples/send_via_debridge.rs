@@ -14,16 +14,10 @@ use crate::mocks::get_send_account;
 
 mod mocks;
 
-fn main() {
-    let rpc_client: RpcClient = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
-
-    let payer = mocks::get_config_keypair();
-
-    let message: Vec<u8> = vec![];
-
-    let wallet = rpc_client
+fn get_wrapped_sol_wallet(rpc_client: &RpcClient, payer: Pubkey) -> Pubkey {
+    rpc_client
         .get_token_accounts_by_owner(
-            &payer.pubkey(),
+            &payer,
             TokenAccountsFilter::Mint(
                 Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap(),
             ),
@@ -32,18 +26,22 @@ fn main() {
         .iter()
         .max_by_key(|wallet| wallet.account.lamports)
         .map(|wallet| Pubkey::from_str(wallet.pubkey.as_str()).expect("Failed to parse wallet"))
-        .expect("There are no payer wallets");
+        .expect("There are no payer wallets")
+}
 
-    let budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(230000);
+fn main() {
+    let rpc_client: RpcClient = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
 
-    let ix = Instruction {
+    let payer = mocks::get_config_keypair();
+
+    let cross_chain_message = vec![];
+    let ix_with_debridge_send_inside = Instruction {
         program_id: EXAMPLE_ID,
         accounts: get_send_account(
             payer.pubkey(),
-            wallet,
-            sha3::Keccak256::hash(message.as_slice()),
+            get_wrapped_sol_wallet(&rpc_client, payer.pubkey()),
+            sha3::Keccak256::hash(cross_chain_message.as_slice()),
         )
-        .expect("Failed to create send accounts list")
         .to_vec(),
         data: SendViaDebridge {
             amount: 0,
@@ -58,8 +56,12 @@ fn main() {
     let blockhash = rpc_client
         .get_latest_blockhash()
         .expect("Failed to get blockhash");
+
     let tx = Transaction::new_signed_with_payer(
-        &[budget_ix, ix],
+        &[
+            ComputeBudgetInstruction::set_compute_unit_limit(230000),
+            ix_with_debridge_send_inside,
+        ],
         Some(&payer.pubkey()),
         &[&payer],
         blockhash,

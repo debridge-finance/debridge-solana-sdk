@@ -42,7 +42,6 @@ fn main() {
             wallet,
             sha3::Keccak256::hash(external_call.as_slice()),
         )
-        .expect("Failed to create send accounts list")
         .to_vec(),
         data: SendViaDebridgeWithExternalCall {
             amount: 0,
