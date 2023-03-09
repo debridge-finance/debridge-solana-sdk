@@ -1,10 +1,21 @@
-use std::str::FromStr;
+use std::{str::FromStr, path::PathBuf};
 
 use debridge_solana_sdk::{
     keys::{ExternalCallMetaPubkey, ExternalCallStoragePubkey},
     Error,
 };
-use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, signature::{Keypair, read_keypair_file}};
+
+/// Takes keypair from from file by path in `KEYPAIR_PATH` env variable, 
+/// if not presented then from '~/.config/solana.id.json' path
+pub fn get_config_keypair() -> Keypair {
+    let keypair = option_env!("KEYPAIR_PATH")
+        .map(PathBuf::from)
+        .or(dirs::config_dir().map(|p| p.join("solana").join("id.json")))
+        .unwrap();
+    read_keypair_file(keypair).expect("Failed to parse payer keypair")
+}
+
 pub fn get_send_account(
     payer: Pubkey,
     wallet: Pubkey,

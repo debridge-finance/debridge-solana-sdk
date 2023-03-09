@@ -1,15 +1,9 @@
 #![allow(clippy::result_large_err)]
 
-use anchor_lang::{
-    prelude::*,
-    solana_program::{program_error, sysvar},
-};
+use anchor_lang::{prelude::*, solana_program::sysvar};
 use debridge_solana_sdk::{
     check_claiming::check_execution_context,
-    sending::{
-        add_all_fees, invoke_debridge_send, invoke_send_message, is_asset_fee_avaliable,
-        is_chain_supported, SendIx, SendSubmissionParamsInput,
-    },
+    sending::{self, SendIx, SendSubmissionParamsInput},
 };
 
 declare_id!("5UaXbex7paiRDykrN2GaRPW7j7goEQ1ZWqQvUwnAfFTF");
@@ -28,22 +22,26 @@ pub mod debridge_invoke_example {
 
     use anchor_lang::solana_program::program_error::ProgramError;
     use debridge_solana_sdk::prelude::*;
-    use debridge_solana_sdk::sending::invoke_init_external_call;
 
     use super::*;
 
     /// Debridge protocol allows transfer liquidity from Solana to other supported chains
     /// To send some token to other supported chain use [`debridge_solana_sdk::sending::invoke_debridge_send`]
     ///
-    /// To check if the network is supported use [`debridge_solana_sdk::sending::is_chain_supported`]
-    pub fn send_via_debridge(ctx: Context<SendViaDebridge>) -> Result<()> {
-        invoke_debridge_send(
+    /// To check if the network is supported you can use [`debridge_solana_sdk::sending::is_chain_supported`]
+    pub fn send_via_debridge(
+        ctx: Context<SendViaDebridge>,
+        amount: u64,
+        target_chain_id: [u8; 32],
+        receiver: Vec<u8>,
+        is_use_asset_fee: bool,
+    ) -> Result<()> {
+        sending::invoke_debridge_send(
             SendIx {
-                target_chain_id: chain_ids::ETHEREUM_CHAIN_ID,
-                receiver: env_to_array::hex_to_array!("bd1e72155Ce24E57D0A026e0F7420D6559A7e651")
-                    .to_vec(),
-                is_use_asset_fee: false,
-                amount: 1000,
+                target_chain_id,
+                receiver,
+                is_use_asset_fee,
+                amount,
                 submission_params: None,
                 referral_code: None,
             },
@@ -77,7 +75,7 @@ pub mod debridge_invoke_example {
             referral_code: None,
         };
 
-        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+        sending::invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
     /// Debridge protocol takes fix fee and transfer fee while sending liquidity.
@@ -105,10 +103,11 @@ pub mod debridge_invoke_example {
             referral_code: None,
         };
 
-        if is_asset_fee_avaliable(ctx.remaining_accounts, target_chain_id)
-            .map_err(|_| ErrorCode::NotEnoughtAccountProvided)?
+        if sending::is_asset_fee_available(ctx.remaining_accounts, target_chain_id)
+            .map_err(|_| ErrorCode::NotEnoughAccountProvided)?
         {
-            invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(error::Error::from)
+            sending::invoke_debridge_send(send_ix, ctx.remaining_accounts)
+                .map_err(error::Error::from)
         } else {
             msg!("Asset fee not available for provided tokens and target chain id");
 
@@ -140,7 +139,7 @@ pub mod debridge_invoke_example {
         execution_fee: u64,
         is_use_asset_fee: bool,
     ) -> Result<()> {
-        let final_amount = add_all_fees(
+        let final_amount = sending::add_all_fees(
             ctx.remaining_accounts,
             target_chain_id,
             exact_amount,
@@ -161,7 +160,7 @@ pub mod debridge_invoke_example {
             referral_code: None,
         };
 
-        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+        sending::invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
     /// Debridge protocol allows to anyone execute claim transaction in target chain. It allow to create
@@ -185,7 +184,7 @@ pub mod debridge_invoke_example {
             referral_code: None,
         };
 
-        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+        sending::invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
     /// Debridge protocol allows not only to send tokens to another network,
@@ -202,6 +201,7 @@ pub mod debridge_invoke_example {
     ///
     /// A `execution_fee` is reward reward that will received for execution claim transaction in
     /// target chain. It can be set zero if external call will be claimed by yourself.
+    #[allow(clippy::too_many_arguments)]
     pub fn send_via_debridge_with_external_call(
         ctx: Context<SendViaDebridge>,
         amount: u64,
@@ -215,8 +215,7 @@ pub mod debridge_invoke_example {
         debridge_sending::invoke_init_external_call(
             external_call.as_slice(),
             ctx.remaining_accounts,
-        )
-        .map_err(AnchorError::from)?;
+        )?;
 
         let send_ix = SendIx {
             target_chain_id,
@@ -232,7 +231,7 @@ pub mod debridge_invoke_example {
             referral_code: None,
         };
 
-        invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
+        sending::invoke_debridge_send(send_ix, ctx.remaining_accounts).map_err(|err| err.into())
     }
 
     /// deBridge protocol allows calling any smart contract in target chain without sending any tokens.
@@ -260,7 +259,7 @@ pub mod debridge_invoke_example {
         fallback_address: Vec<u8>,
         message: Vec<u8>,
     ) -> Result<()> {
-        invoke_send_message(
+        sending::invoke_send_message(
             message,
             target_chain_id,
             receiver,
