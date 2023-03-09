@@ -1,13 +1,11 @@
-use std::{env, str::FromStr};
+use std::str::FromStr;
 
 use anchor_lang::InstructionData;
-use debridge_solana_sdk::{reserved_flags::SetReservedFlag, HashAdapter};
+use debridge_solana_sdk::{reserved_flags::SetReservedFlag, HashAdapter, POLYGON_CHAIN_ID};
 use debridge_solana_sdk_example::{instruction::SendViaDebridgeWithExternalCall, ID as EXAMPLE_ID};
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
 use solana_program::instruction::Instruction;
-use solana_sdk::{
-    pubkey::Pubkey, signature::Signer, signer::keypair::read_keypair_file, transaction::Transaction,
-};
+use solana_sdk::{pubkey::Pubkey, signature::Signer, transaction::Transaction};
 
 use crate::mocks::get_send_account;
 
@@ -16,7 +14,7 @@ mod mocks;
 fn main() {
     let rpc_client: RpcClient = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
 
-    let payer = read_keypair_file(env!("KEYPAIR_PATH")).expect("Failed to parse payer keypair");
+    let payer = mocks::get_config_keypair();
 
     let external_call = hex::decode("a69b6ed0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000060011223344550000000000000000000000000000000000000000000000000000").expect("Failed to decode external code");
 
@@ -54,10 +52,7 @@ fn main() {
                 .expect("Failed to decode fallback address"),
             receiver: hex::decode("cfcc66ee5397b7cdf7228f7502d1e168518c6bb3")
                 .expect("Failed to decode receiver"),
-            target_chain_id: [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 137,
-            ],
+            target_chain_id: POLYGON_CHAIN_ID,
             reserved_flag: flags,
         }
         .data(),

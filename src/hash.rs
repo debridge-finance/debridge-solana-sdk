@@ -12,3 +12,11 @@ impl HashAdapter for SolanaKeccak256 {
         solana_program::hash::hash(input).to_bytes()
     }
 }
+
+#[cfg(not(target_arch = "bpf"))]
+impl HashAdapter for sha3::Keccak256 {
+    fn hash(input: &[u8]) -> [u8; 32] {
+        use sha3::Digest;
+        sha3::Keccak256::digest(input).try_into().unwrap()
+    }
+}

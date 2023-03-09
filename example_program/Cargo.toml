@@ -37,3 +37,4 @@ debridge-solana-sdk = {path = "../"}
 borsh = "0.9.1"
 hex = "0.4.3"
 sha3 = "0.10.6"
+dirs = "4.0"
