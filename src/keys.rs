@@ -60,12 +60,10 @@ pub trait AssetFeeInfoPubkey {
 impl AssetFeeInfoPubkey for Pubkey {}
 
 pub trait BridgePubkey {
-    fn find_bridge_address(token_mint: &Pubkey) -> Result<(Pubkey, u8), Error> {
-        Ok(Pubkey::find_program_address(
-            &[Bridge::SEED, token_mint.as_ref()],
-            &SETTINGS_ID,
-        ))
+    fn find_bridge_address(token_mint: &Pubkey) -> (Pubkey, u8) {
+        Pubkey::find_program_address(&[Bridge::SEED, token_mint.as_ref()], &SETTINGS_ID)
     }
+
     fn create_bridge_address(token_mint: &Pubkey, bump: u8) -> Result<Option<Pubkey>, Error> {
         Ok(Pubkey::create_program_address(
             &[Bridge::SEED, token_mint.as_ref(), &[bump]],
@@ -99,11 +97,8 @@ mod tests {
 }
 
 pub trait ExternalCallStoragePubkey {
-    fn find_external_call_storage_address(
-        shortcut: &[u8; 32],
-        owner: &Pubkey,
-    ) -> Result<(Pubkey, u8), Error> {
-        Ok(Pubkey::find_program_address(
+    fn find_external_call_storage_address(shortcut: &[u8; 32], owner: &Pubkey) -> (Pubkey, u8) {
+        Pubkey::find_program_address(
             &[
                 b"EXTERNAL_CALL_STORAGE",
                 shortcut,
@@ -111,7 +106,7 @@ pub trait ExternalCallStoragePubkey {
                 &SOLANA_CHAIN_ID,
             ],
             &DEBRIDGE_ID,
-        ))
+        )
     }
 
     fn create_external_call_storage_address(
@@ -135,13 +130,11 @@ pub trait ExternalCallStoragePubkey {
 impl ExternalCallStoragePubkey for Pubkey {}
 
 pub trait ExternalCallMetaPubkey {
-    fn find_external_call_meta_address(
-        external_call_storage: &Pubkey,
-    ) -> Result<(Pubkey, u8), Error> {
-        Ok(Pubkey::find_program_address(
+    fn find_external_call_meta_address(external_call_storage: &Pubkey) -> (Pubkey, u8) {
+        Pubkey::find_program_address(
             &[b"EXTERNAL_CALL_META", external_call_storage.as_ref()],
             &DEBRIDGE_ID,
-        ))
+        )
     }
 
     fn create_external_call_meta_address(

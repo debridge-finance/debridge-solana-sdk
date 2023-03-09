@@ -373,7 +373,7 @@ pub fn get_asset_fee_info(
         .ok_or(Error::WrongAccountIndex)
         .and_then(|(token_mint, asset_fee)| {
             Pubkey::find_asset_fee_info_address(
-                &Pubkey::find_bridge_address(token_mint.key)?.0,
+                &Pubkey::find_bridge_address(token_mint.key).0,
                 &target_chain_id,
             )?
             .0

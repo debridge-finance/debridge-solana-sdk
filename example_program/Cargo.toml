@@ -24,17 +24,18 @@ codegen-units = 1
 [dev-dependencies]
 anchor-lang = "0.26.0"
 base58 = "0.2.0"
-thiserror = "1.0.38"
-rstest = "0.12.0"
-tokio = { version = "1.24.2", features = ["full"] }
+borsh = "0.9.1"
+debridge-solana-sdk = {path = "../"}
+debridge-solana-sdk-example = { path = "programs/debridge-solana-sdk-example" }
+dirs = "4.0"
+env_to_array = "0.1.1"
+hex = "0.4.3"
 log = "0.4.17"
-solana-program = "=1.14.6"
-solana-sdk = "1.10.41"
+rstest = "0.12.0"
+sha3 = "0.10.6"
 simple_logger = "1.13.0"
 solana-client = "1.14.6"
-debridge-solana-sdk-example = { path = "programs/debridge-solana-sdk-example" }
-debridge-solana-sdk = {path = "../"}
-borsh = "0.9.1"
-hex = "0.4.3"
-sha3 = "0.10.6"
-dirs = "4.0"
+solana-program = "=1.14.6"
+solana-sdk = "1.10.41"
+thiserror = "1.0.38"
+tokio = { version = "1.24.2", features = ["full"] }
