@@ -14,6 +14,7 @@ async function main() {
     helpers.hexToBuffer(parsed.receiver),
     parsed.executionFee,
     helpers.hexToBuffer(parsed.fallbackAddress),
+    Array.from({ length: 32 }).fill(0) as number[],
     parsed.data,
   );
 

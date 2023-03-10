@@ -5,20 +5,39 @@ export type DebridgeInvokeExample = {
     {
       name: "sendViaDebridge";
       docs: [
-        "Debridge protocol allows transfer liqudity from Solana to other supported chains",
+        "Debridge protocol allows transfer liquidity from Solana to other supported chains",
         "To send some token to other supported chain use [`debridge_solana_sdk::sending::invoke_debridge_send`]",
         "",
         "To check if the network is supported use [`debridge_solana_sdk::sending::is_chain_supported`]",
       ];
       accounts: [];
-      args: [];
+      args: [
+        {
+          name: "amount";
+          type: "u64";
+        },
+        {
+          name: "targetChainId";
+          type: {
+            array: ["u8", 32];
+          };
+        },
+        {
+          name: "receiver";
+          type: "bytes";
+        },
+        {
+          name: "isUseAssetFee";
+          type: "bool";
+        },
+      ];
     },
     {
       name: "sendViaDebridgeWithNativeFixedFee";
       docs: [
-        "Debridge protocol takes fix fee and transfer fee while sending liqudity.",
+        "Debridge protocol takes fix fee and transfer fee while sending liquidity.",
         "The fix fee by default is taken in native solana tokens.",
-        "The default native fix fee amount is setted in state account but it can setted custom native",
+        "The default native fix fee amount is set in state account but it can set custom native",
         "fix amount for a specific chain in chain support info account.",
         "",
         "To get default native fix fee amount use [`debridge_solana_sdk::sending::get_default_native_fix_fee`]",
@@ -48,12 +67,12 @@ export type DebridgeInvokeExample = {
     {
       name: "sendViaDebridgeWithAssetFixedFee";
       docs: [
-        "Debridge protocol takes fix fee and transfer fee while sending liqudity.",
+        "Debridge protocol takes fix fee and transfer fee while sending liquidity.",
         "The fix fee by default is taken in native solana tokens.",
         "But when transferring some tokens to certain networks, it is possible to pay in transferred tokens.",
         "It's called `asset_fix_fee`.",
         "",
-        "To known `asset_fee` is avaliable use [`debridge_solana_sdk::sending::is_asset_fee_avaliable`]",
+        "To known `asset_fee` is available use [`debridge_solana_sdk::sending::is_asset_fee_available`]",
         "",
         "To get asset fix fee amount for specific chain use [`debridge_solana_sdk::sending::try_get_chain_asset_fix_fee`]",
         "",
@@ -80,7 +99,7 @@ export type DebridgeInvokeExample = {
     {
       name: "sendViaDebridgeWithExactAmount";
       docs: [
-        "Debridge protocol takes fix fee and transfer fee while sending liqudity.",
+        "Debridge protocol takes fix fee and transfer fee while sending liquidity.",
         "If needed to get exact amount tokens in target chain, all fees will need to be added to sending amount.",
         "",
         "There are three types of fees in Debridge protocol: fixed fee, transfer fee, execution fee.",
@@ -92,7 +111,7 @@ export type DebridgeInvokeExample = {
         "Transfer fee is taken as part of sent tokens. To get the bps of transfer fee use [`debridge_solana_sdk::sending::get_transfer_fee`]",
         "To add transfer fee to current amount use [`debridge_solana_sdk::sending::add_transfer_fee`]",
         "",
-        "Execution fee is reward for execute claim insctuction in target chain. It can be zero if you want to run the instruction yourself.",
+        "Execution fee is reward for execute claim instruction in target chain. It can be zero if you want to run the instruction yourself.",
         "The recommended execution fee can be obtained using debridge sdk.",
         "",
         "To add to exact amount all fees charged during the send use [`debridge_solana_sdk::sending::add_all_fees`]",
@@ -100,7 +119,7 @@ export type DebridgeInvokeExample = {
       accounts: [];
       args: [
         {
-          name: "exectAmount";
+          name: "exactAmount";
           type: "u64";
         },
         {
@@ -170,7 +189,7 @@ export type DebridgeInvokeExample = {
         "if external call fails. On this address token received in target chain will transfer.",
         "",
         "A `execution_fee` is reward reward that will received for execution claim transaction in",
-        "target chain. It can be set zero if external call will be claimed by youself.",
+        "target chain. It can be set zero if external call will be claimed by yourself.",
       ];
       accounts: [];
       args: [
@@ -197,6 +216,12 @@ export type DebridgeInvokeExample = {
           type: "bytes";
         },
         {
+          name: "reservedFlag";
+          type: {
+            array: ["u8", 32];
+          };
+        },
+        {
           name: "externalCall";
           type: "bytes";
         },
@@ -215,12 +240,12 @@ export type DebridgeInvokeExample = {
         "",
         "To send message with external call function use [`debridge_solana_sdk::sending::invoke_send_message`]",
         "function. This function will create external call storage, calculate transfer fee for",
-        "transfering execution fee and send the message to target chain.",
+        "transferring execution fee and send the message to target chain.",
         "Besides external call needed to provide `fallback_address`. The `fallback_address' will be used",
         "if external call fails. On this address token received in target chain will transfer.",
         "",
         "A `execution_fee` is reward reward that will received for execution claim transaction in",
-        "target chain. It can be set zero if external call will be claimed by youself.",
+        "target chain. It can be set zero if external call will be claimed by yourself.",
       ];
       accounts: [];
       args: [
@@ -257,7 +282,7 @@ export type DebridgeInvokeExample = {
         "stored and verified in external_call_storage with Solana Cross-Program Invocations and",
         "[`anchor_lang::solana_program::program::invoke_signed`] function. Often there is a task to check",
         "that the program instruction is called from the `execute_external_call` instruction by",
-        "[`anchor_lang::solana_program::program::invoke_signed`]. For this tast you can use",
+        "[`anchor_lang::solana_program::program::invoke_signed`]. For this task you can use",
         "[`debridge_solana_sdk::check_claiming::check_execution_context`] function. For it you need to",
         "provide `submission` and `submission_authority` accounts and `source_chain_id`. Also you",
         "can check `native_sender`. It's user who call send function in source chain. With this",
@@ -313,6 +338,10 @@ export type DebridgeInvokeExample = {
       code: 6003;
       name: "FailedToCalculateAmountWithFee";
     },
+    {
+      code: 6004;
+      name: "NotEnoughAccountProvided";
+    },
   ];
 };
 
@@ -323,20 +352,39 @@ export const IDL: DebridgeInvokeExample = {
     {
       name: "sendViaDebridge",
       docs: [
-        "Debridge protocol allows transfer liqudity from Solana to other supported chains",
+        "Debridge protocol allows transfer liquidity from Solana to other supported chains",
         "To send some token to other supported chain use [`debridge_solana_sdk::sending::invoke_debridge_send`]",
         "",
         "To check if the network is supported use [`debridge_solana_sdk::sending::is_chain_supported`]",
       ],
       accounts: [],
-      args: [],
+      args: [
+        {
+          name: "amount",
+          type: "u64",
+        },
+        {
+          name: "targetChainId",
+          type: {
+            array: ["u8", 32],
+          },
+        },
+        {
+          name: "receiver",
+          type: "bytes",
+        },
+        {
+          name: "isUseAssetFee",
+          type: "bool",
+        },
+      ],
     },
     {
       name: "sendViaDebridgeWithNativeFixedFee",
       docs: [
-        "Debridge protocol takes fix fee and transfer fee while sending liqudity.",
+        "Debridge protocol takes fix fee and transfer fee while sending liquidity.",
         "The fix fee by default is taken in native solana tokens.",
-        "The default native fix fee amount is setted in state account but it can setted custom native",
+        "The default native fix fee amount is set in state account but it can set custom native",
         "fix amount for a specific chain in chain support info account.",
         "",
         "To get default native fix fee amount use [`debridge_solana_sdk::sending::get_default_native_fix_fee`]",
@@ -366,12 +414,12 @@ export const IDL: DebridgeInvokeExample = {
     {
       name: "sendViaDebridgeWithAssetFixedFee",
       docs: [
-        "Debridge protocol takes fix fee and transfer fee while sending liqudity.",
+        "Debridge protocol takes fix fee and transfer fee while sending liquidity.",
         "The fix fee by default is taken in native solana tokens.",
         "But when transferring some tokens to certain networks, it is possible to pay in transferred tokens.",
         "It's called `asset_fix_fee`.",
         "",
-        "To known `asset_fee` is avaliable use [`debridge_solana_sdk::sending::is_asset_fee_avaliable`]",
+        "To known `asset_fee` is available use [`debridge_solana_sdk::sending::is_asset_fee_available`]",
         "",
         "To get asset fix fee amount for specific chain use [`debridge_solana_sdk::sending::try_get_chain_asset_fix_fee`]",
         "",
@@ -398,7 +446,7 @@ export const IDL: DebridgeInvokeExample = {
     {
       name: "sendViaDebridgeWithExactAmount",
       docs: [
-        "Debridge protocol takes fix fee and transfer fee while sending liqudity.",
+        "Debridge protocol takes fix fee and transfer fee while sending liquidity.",
         "If needed to get exact amount tokens in target chain, all fees will need to be added to sending amount.",
         "",
         "There are three types of fees in Debridge protocol: fixed fee, transfer fee, execution fee.",
@@ -410,7 +458,7 @@ export const IDL: DebridgeInvokeExample = {
         "Transfer fee is taken as part of sent tokens. To get the bps of transfer fee use [`debridge_solana_sdk::sending::get_transfer_fee`]",
         "To add transfer fee to current amount use [`debridge_solana_sdk::sending::add_transfer_fee`]",
         "",
-        "Execution fee is reward for execute claim insctuction in target chain. It can be zero if you want to run the instruction yourself.",
+        "Execution fee is reward for execute claim instruction in target chain. It can be zero if you want to run the instruction yourself.",
         "The recommended execution fee can be obtained using debridge sdk.",
         "",
         "To add to exact amount all fees charged during the send use [`debridge_solana_sdk::sending::add_all_fees`]",
@@ -418,7 +466,7 @@ export const IDL: DebridgeInvokeExample = {
       accounts: [],
       args: [
         {
-          name: "exectAmount",
+          name: "exactAmount",
           type: "u64",
         },
         {
@@ -488,7 +536,7 @@ export const IDL: DebridgeInvokeExample = {
         "if external call fails. On this address token received in target chain will transfer.",
         "",
         "A `execution_fee` is reward reward that will received for execution claim transaction in",
-        "target chain. It can be set zero if external call will be claimed by youself.",
+        "target chain. It can be set zero if external call will be claimed by yourself.",
       ],
       accounts: [],
       args: [
@@ -515,6 +563,12 @@ export const IDL: DebridgeInvokeExample = {
           type: "bytes",
         },
         {
+          name: "reservedFlag",
+          type: {
+            array: ["u8", 32],
+          },
+        },
+        {
           name: "externalCall",
           type: "bytes",
         },
@@ -533,12 +587,12 @@ export const IDL: DebridgeInvokeExample = {
         "",
         "To send message with external call function use [`debridge_solana_sdk::sending::invoke_send_message`]",
         "function. This function will create external call storage, calculate transfer fee for",
-        "transfering execution fee and send the message to target chain.",
+        "transferring execution fee and send the message to target chain.",
         "Besides external call needed to provide `fallback_address`. The `fallback_address' will be used",
         "if external call fails. On this address token received in target chain will transfer.",
         "",
         "A `execution_fee` is reward reward that will received for execution claim transaction in",
-        "target chain. It can be set zero if external call will be claimed by youself.",
+        "target chain. It can be set zero if external call will be claimed by yourself.",
       ],
       accounts: [],
       args: [
@@ -575,7 +629,7 @@ export const IDL: DebridgeInvokeExample = {
         "stored and verified in external_call_storage with Solana Cross-Program Invocations and",
         "[`anchor_lang::solana_program::program::invoke_signed`] function. Often there is a task to check",
         "that the program instruction is called from the `execute_external_call` instruction by",
-        "[`anchor_lang::solana_program::program::invoke_signed`]. For this tast you can use",
+        "[`anchor_lang::solana_program::program::invoke_signed`]. For this task you can use",
         "[`debridge_solana_sdk::check_claiming::check_execution_context`] function. For it you need to",
         "provide `submission` and `submission_authority` accounts and `source_chain_id`. Also you",
         "can check `native_sender`. It's user who call send function in source chain. With this",
@@ -630,6 +684,10 @@ export const IDL: DebridgeInvokeExample = {
     {
       code: 6003,
       name: "FailedToCalculateAmountWithFee",
+    },
+    {
+      code: 6004,
+      name: "NotEnoughAccountProvided",
     },
   ],
 };

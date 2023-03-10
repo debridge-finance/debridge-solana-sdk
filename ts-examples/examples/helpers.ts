@@ -58,8 +58,18 @@ export function getParserForExternalCall(): ArgumentParser {
   return parser;
 }
 
-export function getDefaultArgs(): DefaultArgs {
-  return getDefaultParser().parse_args() as DefaultArgs;
+export function getDefaultArgs(useAssetFeeEnabled: boolean = false): DefaultArgs & { useAssetFee?: boolean } {
+  const parser = getDefaultParser();
+  if (useAssetFeeEnabled) {
+    parser.add_argument("-useAssetFee", "--assetFee", {
+      required: false,
+      default: false,
+      choices: ["false", "true"],
+      action: ParseBool,
+    });
+  }
+
+  return parser.parse_args() as DefaultArgs;
 }
 
 export function getArgsForExtCall(): DefaultArgs & ExtCallArgs {
