@@ -13,7 +13,7 @@ use solana_sdk::{
 pub fn get_config_keypair() -> Keypair {
     let keypair = option_env!("KEYPAIR_PATH")
         .map(PathBuf::from)
-        .or(dirs::config_dir().map(|p| p.join("solana").join("id.json")))
+        .or_else(|| dirs::config_dir().map(|p| p.join("solana").join("id.json")))
         .unwrap();
     read_keypair_file(keypair).expect("Failed to parse payer keypair")
 }

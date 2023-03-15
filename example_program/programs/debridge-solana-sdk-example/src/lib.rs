@@ -238,7 +238,6 @@ pub mod debridge_invoke_example {
     /// You have to pay only a transfer fee for sending an execution fee to another chain.
     /// If you claim by yourself, set execution fee to zero, you don’t need to pay transfer fee at all.
     /// Only fixed fee will be taken.
-
     ///
     /// Used `external_call` for this. For evm-like network it will be address of smart contract
     /// function and function's arguments packed in byte vector.
@@ -266,6 +265,46 @@ pub mod debridge_invoke_example {
             execution_fee,
             fallback_address,
             ctx.remaining_accounts,
+        )
+        .map_err(ProgramError::from)?;
+
+        Ok(())
+    }
+
+    /// One of the function of Debridge protocol is transferring message between two program or
+    /// smart contract. For this, solana uses PDA accounts. With the help of pda accounts,
+    /// the program ensures that it initiated the call to the send function of the debridge program
+    ///
+    /// To use this feature, you need to use [`debridge_solana_sdk::sending::set_send_from_account`]
+    /// and provide PDA account and wallet that belongs to this account. Then you have to use debrige
+    /// sdk function with `_signed` postfix. In this example we use [`debridge_solana_sdk::sending::invoke_send_message_signed`].
+    /// These functions additionally need to pass signers seeds and bump.
+    pub fn send_message_via_debridge_with_program_sender<'info>(
+        ctx: Context<'_, '_, '_, 'info, SendViaDebridgeWithSender<'info>>,
+        target_chain_id: [u8; 32],
+        receiver: Vec<u8>,
+        execution_fee: u64,
+        fallback_address: Vec<u8>,
+        message: Vec<u8>,
+    ) -> Result<()> {
+        let mut accounts = ctx.remaining_accounts.to_vec();
+
+        sending::set_send_from_account(
+            accounts.as_mut_slice(),
+            ctx.accounts.program_sender.clone(),
+            ctx.accounts.program_sender_wallet.clone(),
+        );
+
+        let bump = *ctx.bumps.get("program_sender").expect("Failed to get bump");
+
+        sending::invoke_send_message_signed(
+            message,
+            target_chain_id,
+            receiver,
+            execution_fee,
+            fallback_address,
+            accounts.as_slice(),
+            &[&[PROGRAM_SENDER_SEED, &[bump]]],
         )
         .map_err(ProgramError::from)?;
 
@@ -301,6 +340,19 @@ pub mod debridge_invoke_example {
 
 #[derive(Accounts)]
 pub struct SendViaDebridge {}
+
+const PROGRAM_SENDER_SEED: &[u8] = b"PROGRAM_SENDER";
+
+#[derive(Accounts)]
+pub struct SendViaDebridgeWithSender<'info> {
+    #[account(
+        mut,
+        seeds = [PROGRAM_SENDER_SEED],
+        bump,
+    )]
+    program_sender: AccountInfo<'info>,
+    program_sender_wallet: AccountInfo<'info>,
+}
 
 #[derive(Accounts)]
 pub struct CheckClaiming<'info> {

@@ -629,6 +629,15 @@ pub fn add_transfer_fee(
         .map_err(|_| OVERFLOW_ERR)
 }
 
+pub fn set_send_from_account<'a>(
+    account_infos: &mut [AccountInfo<'a>],
+    send_from: AccountInfo<'a>,
+    send_from_wallet: AccountInfo<'a>,
+) {
+    account_infos[SEND_FROM_INDEX] = send_from;
+    account_infos[SEND_FROM_WALLET_INDEX] = send_from_wallet;
+}
+
 const CHAIN_SUPPORT_INFO_INDEX: usize = 4;
 const STATE_INDEX: usize = 7;
 const ASSET_FEE_INDEX: usize = 16;
@@ -637,6 +646,7 @@ const TOKEN_MINT_INDEX: usize = 1;
 const EXTERNAL_CALL_STORAGE_INDEX: usize = 12;
 const EXTERNAL_CALL_META_INDEX: usize = 13;
 const SEND_FROM_INDEX: usize = 14;
+const SEND_FROM_WALLET_INDEX: usize = 10;
 const SYSTEM_PROGRAM_INDEX: usize = 11;
 const DEBRIDGE_PROGRAM_INDEX: usize = 17;
 
