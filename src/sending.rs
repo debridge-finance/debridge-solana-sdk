@@ -3,20 +3,20 @@ use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
     instruction::{AccountMeta, Instruction},
-    program::invoke,
+    program::invoke_signed,
     program_error::ProgramError,
 };
 
-use crate::hash::HashAdapter;
 use crate::{
     debridge_accounts::{
         AssetFeeInfo, ChainSupportInfo, ExternalCallMeta, State, TryFromAccount,
         INIT_EXTERNAL_CALL_DISCRIMINATOR, SEND_DISCRIMINATOR,
     },
+    errors::InvokeError,
+    hash::HashAdapter,
     keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
     reserved_flags::SetReservedFlag,
     Error, Pubkey, SolanaKeccak256, BPS_DENOMINATOR, DEBRIDGE_ID, SOLANA_CHAIN_ID,
-    errors::InvokeError,
 };
 
 /// Struct for forming send instruction in debridge program
@@ -114,6 +114,21 @@ impl SendSubmissionParamsInput {
 /// * `send_ix` - [`SendIx`] structure to send debridge instruction creation
 /// * `account_infos` - account forming by client from debridge-typescript-sdk
 pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> ProgramResult {
+    invoke_debridge_send_signed(send_ix, account_infos, &[])
+}
+
+/// Invoke send instruction in debridge program with using PDA account as send_from.
+/// You can using this function for sending message on behalf of the program.
+///
+/// # Arguments
+/// * `send_ix` - [`SendIx`] structure to send debridge instruction creation
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
+/// * `signer_seeds` - parameter is a slice of `u8` slices where the inner slices represent the seeds used to derive PDA account
+pub fn invoke_debridge_send_signed(
+    send_ix: SendIx,
+    account_infos: &[AccountInfo],
+    signers_seeds: &[&[&[u8]]],
+) -> ProgramResult {
     if account_infos.len() < SEND_META_TEMPLATE.len() {
         return Err(ProgramError::NotEnoughAccountKeys);
     }
@@ -144,7 +159,7 @@ pub fn invoke_debridge_send(send_ix: SendIx, account_infos: &[AccountInfo]) -> P
         .concat(),
     };
 
-    invoke(&ix, account_infos)
+    invoke_signed(&ix, account_infos, signers_seeds)
 }
 
 /// Struct for forming send instruction in debridge program
@@ -168,6 +183,21 @@ pub struct InitExternalCallIx {
 pub fn invoke_init_external_call(
     external_call: &[u8],
     account_infos: &[AccountInfo],
+) -> Result<(), ProgramError> {
+    invoke_init_external_call_signed(external_call, account_infos, &[])
+}
+
+/// Create account for storing external call buffer with using PDA account as send_from.
+/// You can using this function for sending message on behalf of the program.
+///
+/// # Arguments
+/// * `external_call` - instructions sending in target chain
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
+/// * `signer_seeds` - parameter is a slice of `u8` slices where the inner slices represent the seeds used to derive PDA account
+pub fn invoke_init_external_call_signed(
+    external_call: &[u8],
+    account_infos: &[AccountInfo],
+    signers_seeds: &[&[&[u8]]],
 ) -> Result<(), ProgramError> {
     let external_call_storage = account_infos[EXTERNAL_CALL_STORAGE_INDEX].clone();
     let external_call_meta = account_infos[EXTERNAL_CALL_META_INDEX].clone();
@@ -205,7 +235,7 @@ pub fn invoke_init_external_call(
         },
     ];
 
-    invoke(
+    invoke_signed(
         &Instruction::new_with_bytes(
             DEBRIDGE_ID,
             &[
@@ -230,13 +260,15 @@ pub fn invoke_init_external_call(
             system_program,
             debridge_program,
         ],
+        signers_seeds,
     )?;
 
     Ok(())
 }
 
-/// Send message to other chain without liquidity.
-/// Perform debridge send flow with zero amount
+/// Send message to other chain without liquidity with using PDA account as send_from.
+/// You can using this function for sending message on behalf of the program.
+/// Perform debridge send flow with zero amount.
 ///
 /// # Arguments
 /// * `external_call` - instructions sending in target chain
@@ -253,7 +285,38 @@ pub fn invoke_send_message(
     fallback_address: Vec<u8>,
     account_infos: &[AccountInfo],
 ) -> Result<(), InvokeError> {
-    invoke_init_external_call(external_call.as_slice(), account_infos)?;
+    invoke_send_message_signed(
+        external_call,
+        target_chain_id,
+        receiver,
+        execution_fee,
+        fallback_address,
+        account_infos,
+        &[],
+    )
+}
+
+/// Send message to other chain without liquidity.
+/// Perform debridge send flow with zero amount
+///
+/// # Arguments
+/// * `external_call` - instructions sending in target chain
+/// * `target_chain_id` - chain id to which the tokens are sent
+/// * `receiver` -
+/// * `execution_fee` - chain id to which the tokens are sent
+/// * `fallback_address` - reserve address for sending tokens if external call fails
+/// * `account_infos` - account forming by client from debridge-typescript-sdk
+/// * `signer_seeds` - parameter is a slice of `u8` slices where the inner slices represent the seeds used to derive PDA account
+pub fn invoke_send_message_signed(
+    external_call: Vec<u8>,
+    target_chain_id: [u8; 32],
+    receiver: Vec<u8>,
+    execution_fee: u64,
+    fallback_address: Vec<u8>,
+    account_infos: &[AccountInfo],
+    signers_seeds: &[&[&[u8]]],
+) -> Result<(), InvokeError> {
+    invoke_init_external_call_signed(external_call.as_slice(), account_infos, signers_seeds)?;
 
     let send_ix = SendIx {
         target_chain_id,
@@ -269,7 +332,7 @@ pub fn invoke_send_message(
         referral_code: None,
     };
 
-    invoke_debridge_send(send_ix, account_infos)?;
+    invoke_debridge_send_signed(send_ix, account_infos, signers_seeds)?;
 
     Ok(())
 }

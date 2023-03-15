@@ -76,10 +76,11 @@ impl BridgePubkey for Pubkey {}
 
 #[cfg(test)]
 mod tests {
-    use crate::keys::ChainSupportInfoPubkey;
     use std::str::FromStr;
 
     use solana_program::pubkey::Pubkey;
+
+    use crate::keys::ChainSupportInfoPubkey;
 
     #[test]
     fn find_chain_support_info_test() {
