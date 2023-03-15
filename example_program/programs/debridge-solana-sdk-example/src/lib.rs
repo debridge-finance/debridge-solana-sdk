@@ -341,7 +341,7 @@ pub mod debridge_invoke_example {
 #[derive(Accounts)]
 pub struct SendViaDebridge {}
 
-const PROGRAM_SENDER_SEED: &[u8] = b"PROGRAM_SENDER";
+pub const PROGRAM_SENDER_SEED: &[u8] = b"PROGRAM_SENDER";
 
 #[derive(Accounts)]
 pub struct SendViaDebridgeWithSender<'info> {

@@ -2758,6 +2758,7 @@ dependencies = [
  "solana-client",
  "solana-program",
  "solana-sdk",
+ "spl-token",
  "thiserror",
  "tokio",
 ]
