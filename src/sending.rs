@@ -266,14 +266,13 @@ pub fn invoke_init_external_call_signed(
     Ok(())
 }
 
-/// Send message to other chain without liquidity with using PDA account as send_from.
-/// You can using this function for sending message on behalf of the program.
-/// Perform debridge send flow with zero amount.
+/// Send message to other chain without liquidity.
+/// Perform debridge send flow with zero amount
 ///
 /// # Arguments
 /// * `external_call` - instructions sending in target chain
 /// * `target_chain_id` - chain id to which the tokens are sent
-/// * `receiver` -
+/// * `receiver` - send message to other chain without liquidity.
 /// * `execution_fee` - chain id to which the tokens are sent
 /// * `fallback_address` - reserve address for sending tokens if external call fails
 /// * `account_infos` - account forming by client from debridge-typescript-sdk
@@ -296,13 +295,14 @@ pub fn invoke_send_message(
     )
 }
 
-/// Send message to other chain without liquidity.
-/// Perform debridge send flow with zero amount
+/// Send message to other chain without liquidity with using PDA account as send_from.
+/// You can using this function for sending message on behalf of the program.
+/// Perform debridge send flow with zero amount.
 ///
 /// # Arguments
 /// * `external_call` - instructions sending in target chain
 /// * `target_chain_id` - chain id to which the tokens are sent
-/// * `receiver` -
+/// * `receiver` - send message to other chain without liquidity.
 /// * `execution_fee` - chain id to which the tokens are sent
 /// * `fallback_address` - reserve address for sending tokens if external call fails
 /// * `account_infos` - account forming by client from debridge-typescript-sdk
