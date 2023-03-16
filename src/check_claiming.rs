@@ -1,3 +1,6 @@
+use solana_program::instruction::Instruction;
+use solana_program::pubkey::Pubkey;
+use solana_program::sysvar::instructions;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
 };
@@ -10,6 +13,46 @@ use crate::{
 impl From<Error> for ProgramError {
     fn from(e: Error) -> Self {
         ProgramError::Custom(e as u32)
+    }
+}
+
+pub fn get_program_id(instructions: &AccountInfo) -> Result<Pubkey, ProgramError> {
+    instructions::load_instruction_at_checked(
+        instructions::load_current_index_checked(instructions)? as usize,
+        instructions,
+    )
+    .map(|ix| ix.program_id)
+}
+
+pub fn get_key_by_index(current_ix: &Instruction, index: usize) -> Result<Pubkey, ProgramError> {
+    Ok(current_ix
+        .accounts
+        .get(index)
+        .map(|account_meta| account_meta.pubkey)
+        .ok_or(Error::WrongClaimParentInstructionAccounts)?)
+}
+
+pub fn get_submission_key(current_ix: &Instruction) -> Result<Pubkey, ProgramError> {
+    get_key_by_index(current_ix, 5)
+}
+
+pub fn get_submission_auth(current_ix: &Instruction) -> Result<Pubkey, ProgramError> {
+    get_key_by_index(current_ix, 6)
+}
+
+pub fn check_execute_ix(current_ix: &Instruction) -> ProgramResult {
+    if !current_ix
+        .data
+        .starts_with(&EXECUTE_EXTERNAL_CALL_DISCRIMINATOR)
+    {
+        msg!(
+            "Expected: {}, Actual: {}",
+            hex::encode(EXECUTE_EXTERNAL_CALL_DISCRIMINATOR),
+            hex::encode(current_ix.data.iter().take(8).copied().collect::<Vec<_>>()),
+        );
+        Err(Error::WrongClaimParentInstruction.into())
+    } else {
+        Ok(())
     }
 }
 
@@ -30,8 +73,6 @@ pub fn check_execution_context(
     source_chain_id: [u8; 32],
     native_sender: Option<Vec<u8>>,
 ) -> ProgramResult {
-    use solana_program::sysvar::instructions;
-
     let current_ix = instructions::load_instruction_at_checked(
         instructions::load_current_index_checked(instructions)? as usize,
         instructions,
@@ -46,41 +87,25 @@ pub fn check_execution_context(
         return Err(Error::WrongClaimParentProgramId.into());
     }
 
-    if !current_ix
-        .data
-        .starts_with(&EXECUTE_EXTERNAL_CALL_DISCRIMINATOR)
-    {
-        msg!(
-            "Expected: {}, Actual: {}",
-            hex::encode(EXECUTE_EXTERNAL_CALL_DISCRIMINATOR),
-            hex::encode(current_ix.data.iter().take(8).copied().collect::<Vec<_>>()),
-        );
-        return Err(Error::WrongClaimParentInstruction.into());
-    }
+    check_execute_ix(&current_ix)?;
 
-    let submission_key_from_ix = current_ix
-        .accounts
-        .get(5)
-        .ok_or(Error::WrongClaimParentInstructionAccounts)?;
+    let submission_key_from_ix = get_submission_key(&current_ix)?;
 
-    if submission.key.ne(&submission_key_from_ix.pubkey) {
+    if submission.key.ne(&submission_key_from_ix) {
         msg!(
             "Expected: {}, Actual: {}",
             submission.key,
-            submission_key_from_ix.pubkey,
+            submission_key_from_ix,
         );
         return Err(Error::WrongClaimParentSubmission.into());
     }
 
-    let submission_auth_key = current_ix
-        .accounts
-        .get(6)
-        .ok_or(Error::WrongClaimParentInstructionAccounts)?;
+    let submission_auth_key = get_submission_auth(&current_ix)?;
 
-    if submission_authority.key.ne(&submission_auth_key.pubkey) {
+    if submission_authority.key.ne(&submission_auth_key) {
         msg!(
             "Expected: {}, Actual: {}",
-            submission_auth_key.pubkey,
+            submission_auth_key,
             submission_authority.key,
         );
         return Err(Error::WrongClaimParentSubmissionAuth.into());
