@@ -22,7 +22,7 @@ fn main() {
 
     let payer = mocks::get_config_keypair();
 
-    let message = hex::decode("a69b6ed0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000050011223344556600000000000000000000000000000000000000000000000000").expect("Failed to decode external code");
+    let message = hex::decode("a69b6ed0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000050011223300000000000000000000000000000000000000000000000000000000").expect("Failed to decode external code");
     let token_mint = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
 
     let wallet = rpc_client
@@ -37,19 +37,29 @@ fn main() {
 
     let program_sender = Pubkey::find_program_address(&[PROGRAM_SENDER_SEED], &EXAMPLE_ID).0;
 
+    let program_sender_wallet = Pubkey::find_program_address(
+        &[
+            program_sender.as_ref(),
+            spl_token::ID.as_ref(),
+            token_mint.as_ref(),
+        ],
+        &spl_associated_token_account::ID,
+    )
+    .0;
+
+    println!("Sender: {:?} {:?}", program_sender, program_sender_wallet);
+
+    let create_wallet = spl_associated_token_account::instruction::create_associated_token_account(
+        &payer.pubkey(),
+        &program_sender,
+        &token_mint,
+        &spl_token::ID,
+    );
     let ix = Instruction {
         program_id: EXAMPLE_ID,
         accounts: SendViaDebridgeWithSender {
             program_sender,
-            program_sender_wallet: Pubkey::find_program_address(
-                &[
-                    program_sender.as_ref(),
-                    spl_token::ID.as_ref(),
-                    token_mint.as_ref(),
-                ],
-                &EXAMPLE_ID,
-            )
-            .0,
+            program_sender_wallet,
         }
         .to_account_metas(None)
         .into_iter()
@@ -78,7 +88,7 @@ fn main() {
         .get_latest_blockhash()
         .expect("Failed to get blockhash");
     let tx = Transaction::new_signed_with_payer(
-        &[budget_ix, ix],
+        &[budget_ix, create_wallet, ix],
         Some(&payer.pubkey()),
         &[&payer],
         blockhash,

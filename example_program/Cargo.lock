@@ -970,6 +970,7 @@ dependencies = [
  "anchor-lang",
  "debridge-solana-sdk",
  "env_to_array",
+ "spl-token",
 ]
 
 [[package]]
@@ -2758,6 +2759,7 @@ dependencies = [
  "solana-client",
  "solana-program",
  "solana-sdk",
+ "spl-associated-token-account",
  "spl-token",
  "thiserror",
  "tokio",
