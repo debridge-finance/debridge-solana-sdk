@@ -9,7 +9,7 @@ pub struct SolanaKeccak256;
 
 impl HashAdapter for SolanaKeccak256 {
     fn hash(input: &[u8]) -> [u8; 32] {
-        solana_program::hash::hash(input).to_bytes()
+        solana_program::keccak::hash(input).to_bytes()
     }
 }
 
