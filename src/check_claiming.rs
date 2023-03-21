@@ -1,8 +1,6 @@
-use solana_program::instruction::Instruction;
-use solana_program::pubkey::Pubkey;
-use solana_program::sysvar::instructions;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
+    account_info::AccountInfo, entrypoint::ProgramResult, instruction::Instruction, msg,
+    program_error::ProgramError, pubkey::Pubkey, sysvar::instructions,
 };
 
 use crate::{
@@ -16,7 +14,9 @@ impl From<Error> for ProgramError {
     }
 }
 
-pub fn get_program_id(instructions: &AccountInfo) -> Result<Pubkey, ProgramError> {
+pub fn get_current_instruction_program_id(
+    instructions: &AccountInfo,
+) -> Result<Pubkey, ProgramError> {
     instructions::load_instruction_at_checked(
         instructions::load_current_index_checked(instructions)? as usize,
         instructions,
@@ -24,7 +24,7 @@ pub fn get_program_id(instructions: &AccountInfo) -> Result<Pubkey, ProgramError
     .map(|ix| ix.program_id)
 }
 
-pub fn get_key_by_index(current_ix: &Instruction, index: usize) -> Result<Pubkey, ProgramError> {
+pub fn get_pubkey_by_index(current_ix: &Instruction, index: usize) -> Result<Pubkey, ProgramError> {
     Ok(current_ix
         .accounts
         .get(index)
@@ -32,15 +32,24 @@ pub fn get_key_by_index(current_ix: &Instruction, index: usize) -> Result<Pubkey
         .ok_or(Error::WrongClaimParentInstructionAccounts)?)
 }
 
-pub fn get_submission_key(current_ix: &Instruction) -> Result<Pubkey, ProgramError> {
-    get_key_by_index(current_ix, 5)
+pub struct ValidatedExecuteExtCallIx(Instruction);
+
+impl ValidatedExecuteExtCallIx {
+    pub fn new(instruction: Instruction) -> Self {
+        ValidatedExecuteExtCallIx(instruction)
+    }
+    pub fn get_submission_key(&self) -> Result<Pubkey, ProgramError> {
+        get_pubkey_by_index(&self.0, 5)
+    }
+
+    pub fn get_submission_auth(&self) -> Result<Pubkey, ProgramError> {
+        get_pubkey_by_index(&self.0, 6)
+    }
 }
 
-pub fn get_submission_auth(current_ix: &Instruction) -> Result<Pubkey, ProgramError> {
-    get_key_by_index(current_ix, 6)
-}
-
-pub fn check_execute_ix(current_ix: &Instruction) -> ProgramResult {
+pub fn validate_execute_external_call_instruction_data(
+    current_ix: Instruction,
+) -> Result<ValidatedExecuteExtCallIx, Error> {
     if !current_ix
         .data
         .starts_with(&EXECUTE_EXTERNAL_CALL_DISCRIMINATOR)
@@ -50,9 +59,9 @@ pub fn check_execute_ix(current_ix: &Instruction) -> ProgramResult {
             hex::encode(EXECUTE_EXTERNAL_CALL_DISCRIMINATOR),
             hex::encode(current_ix.data.iter().take(8).copied().collect::<Vec<_>>()),
         );
-        Err(Error::WrongClaimParentInstruction.into())
+        Err(Error::WrongClaimParentInstruction)
     } else {
-        Ok(())
+        Ok(ValidatedExecuteExtCallIx::new(current_ix))
     }
 }
 
@@ -87,9 +96,9 @@ pub fn check_execution_context(
         return Err(Error::WrongClaimParentProgramId.into());
     }
 
-    check_execute_ix(&current_ix)?;
+    let validated_ix = validate_execute_external_call_instruction_data(current_ix)?;
 
-    let submission_key_from_ix = get_submission_key(&current_ix)?;
+    let submission_key_from_ix = validated_ix.get_submission_key()?;
 
     if submission.key.ne(&submission_key_from_ix) {
         msg!(
@@ -100,7 +109,7 @@ pub fn check_execution_context(
         return Err(Error::WrongClaimParentSubmission.into());
     }
 
-    let submission_auth_key = get_submission_auth(&current_ix)?;
+    let submission_auth_key = validated_ix.get_submission_auth()?;
 
     if submission_authority.key.ne(&submission_auth_key) {
         msg!(
