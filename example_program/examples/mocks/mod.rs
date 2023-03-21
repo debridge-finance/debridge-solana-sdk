@@ -24,8 +24,19 @@ macro_rules! pubkey {
     };
 }
 
+#[allow(dead_code)]
 pub fn get_send_account(payer: Pubkey, wallet: Pubkey, shortcut: [u8; 32]) -> [AccountMeta; 18] {
-    let external_call_storage = Pubkey::find_external_call_storage_address(&shortcut, &payer).0;
+    get_send_account_with_creator(payer, wallet, shortcut, payer)
+}
+pub fn get_send_account_with_creator(
+    payer: Pubkey,
+    wallet: Pubkey,
+    shortcut: [u8; 32],
+    external_call_creator: Pubkey,
+) -> [AccountMeta; 18] {
+    let external_call_storage =
+        Pubkey::find_external_call_storage_address(&shortcut, &external_call_creator).0;
+    println!("Ex storage: {:?}", external_call_storage);
     [
         AccountMeta {
             is_signer: false,

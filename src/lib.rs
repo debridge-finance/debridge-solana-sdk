@@ -30,6 +30,7 @@ pub mod chain_ids;
 /// This crate gives general errors that may occur in the sdk using
 mod errors;
 
+pub mod estimator;
 /// This module is auxiliary in working with hash
 mod hash;
 

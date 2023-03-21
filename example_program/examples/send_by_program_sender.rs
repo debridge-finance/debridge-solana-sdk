@@ -13,7 +13,7 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
-use crate::mocks::get_send_account;
+use crate::mocks::get_send_account_with_creator;
 
 mod mocks;
 
@@ -47,14 +47,14 @@ fn main() {
     )
     .0;
 
-    println!("Sender: {:?} {:?}", program_sender, program_sender_wallet);
+    let create_wallet =
+        spl_associated_token_account::instruction::create_associated_token_account_idempotent(
+            &payer.pubkey(),
+            &program_sender,
+            &token_mint,
+            &spl_token::ID,
+        );
 
-    let create_wallet = spl_associated_token_account::instruction::create_associated_token_account(
-        &payer.pubkey(),
-        &program_sender,
-        &token_mint,
-        &spl_token::ID,
-    );
     let ix = Instruction {
         program_id: EXAMPLE_ID,
         accounts: SendViaDebridgeWithSender {
@@ -64,10 +64,11 @@ fn main() {
         .to_account_metas(None)
         .into_iter()
         .chain(
-            get_send_account(
+            get_send_account_with_creator(
                 payer.pubkey(),
                 wallet,
                 sha3::Keccak256::hash(message.as_slice()),
+                program_sender,
             )
             .into_iter(),
         )

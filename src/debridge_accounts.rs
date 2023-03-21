@@ -222,6 +222,10 @@ pub enum ExternalCallMeta {
     Failed,
 }
 
+impl ExternalCallMeta {
+    pub const SPACE: usize = 40;
+}
+
 const EXTERNAL_CALL_META_DISCRIMINATOR: [u8; 8] = [52, 154, 212, 31, 208, 203, 151, 253];
 impl Discriminator for ExternalCallMeta {
     fn discriminator() -> [u8; 8] {

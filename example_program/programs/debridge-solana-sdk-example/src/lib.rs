@@ -3,6 +3,7 @@
 use anchor_lang::{prelude::*, solana_program::sysvar};
 use debridge_solana_sdk::{
     check_claiming::check_execution_context,
+    estimator::get_native_sender_lamports_expenses,
     sending::{self, SendIx, SendSubmissionParamsInput},
 };
 
@@ -18,6 +19,7 @@ pub mod debridge_invoke_example {
         MatchOverflowWhileCalculateInputAmount,
         FailedToCalculateAmountWithFee,
         NotEnoughAccountProvided,
+        FailedToEstimateExpenses,
     }
 
     use anchor_lang::solana_program::{program::invoke, program_error::ProgramError};
@@ -295,8 +297,12 @@ pub mod debridge_invoke_example {
             &transfer(
                 ctx.remaining_accounts[14].key,
                 ctx.accounts.program_sender.key,
-                get_chain_native_fix_fee(ctx.remaining_accounts, target_chain_id)
-                    .map_err(|_| ErrorCode::FailedToCalculateAmountWithFee)?,
+                get_native_sender_lamports_expenses(
+                    get_chain_native_fix_fee(ctx.remaining_accounts, target_chain_id)
+                        .map_err(|_| ErrorCode::FailedToCalculateAmountWithFee)?,
+                    message.len(),
+                )
+                .map_err(|_| ErrorCode::FailedToEstimateExpenses)?,
             ),
             &[
                 ctx.remaining_accounts[14].clone(),
