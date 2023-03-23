@@ -2,9 +2,8 @@
 
 use anchor_lang::{prelude::*, solana_program::sysvar};
 use debridge_solana_sdk::{
-    check_claiming::check_execution_context,
-    estimator::get_native_sender_lamports_expenses,
-    sending::{self, SendIx, SendSubmissionParamsInput},
+    check_claiming, estimator,
+    sending::{SendIx, SendSubmissionParamsInput},
 };
 
 declare_id!("5UaXbex7paiRDykrN2GaRPW7j7goEQ1ZWqQvUwnAfFTF");
@@ -22,12 +21,9 @@ pub mod debridge_invoke_example {
         FailedToEstimateExpenses,
     }
 
-    use anchor_lang::solana_program::{program::invoke, program_error::ProgramError};
-    use debridge_solana_sdk::{
-        prelude::*,
-        sending::{add_all_fees, get_chain_native_fix_fee},
-    };
-    use spl_token::solana_program::system_instruction::transfer;
+    use anchor_lang::solana_program::{program, program_error::ProgramError};
+    use debridge_solana_sdk::{prelude::*, sending};
+    use spl_token::solana_program::system_instruction;
 
     use super::*;
 
@@ -293,12 +289,12 @@ pub mod debridge_invoke_example {
         fallback_address: Vec<u8>,
         message: Vec<u8>,
     ) -> Result<()> {
-        invoke(
-            &transfer(
+        program::invoke(
+            &system_instruction::transfer(
                 ctx.remaining_accounts[14].key,
                 ctx.accounts.program_sender.key,
-                get_native_sender_lamports_expenses(
-                    get_chain_native_fix_fee(ctx.remaining_accounts, target_chain_id)
+                estimator::get_native_sender_lamports_expenses(
+                    sending::get_chain_native_fix_fee(ctx.remaining_accounts, target_chain_id)
                         .map_err(|_| ErrorCode::FailedToCalculateAmountWithFee)?,
                     message.len(),
                 )
@@ -310,14 +306,14 @@ pub mod debridge_invoke_example {
             ],
         )?;
 
-        invoke(
+        program::invoke(
             &spl_token::instruction::transfer(
                 &spl_token::ID,
                 ctx.remaining_accounts[10].key,
                 ctx.accounts.program_sender_wallet.key,
                 ctx.remaining_accounts[14].key,
                 &[],
-                add_all_fees(
+                sending::add_all_fees(
                     ctx.remaining_accounts,
                     target_chain_id,
                     0,
@@ -373,7 +369,7 @@ pub mod debridge_invoke_example {
         source_chain_id: [u8; 32],
         native_sender: Option<Vec<u8>>,
     ) -> Result<()> {
-        check_execution_context(
+        check_claiming::check_execution_context(
             &ctx.accounts.instructions,
             &ctx.accounts.submission,
             &ctx.accounts.submission_authority,

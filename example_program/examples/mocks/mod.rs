@@ -25,6 +25,23 @@ macro_rules! pubkey {
 }
 
 #[allow(dead_code)]
+pub fn get_echo_external_call(message: Vec<u8>) -> Option<Vec<u8>> {
+    let prefix = hex::decode("a69b6ed0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000")
+        .expect("Failed to decode prefix");
+    if message.len() < 32 {
+        None
+    } else {
+        Some(
+            prefix
+                .into_iter()
+                .chain(vec![message.len() as u8])
+                .chain(message)
+                .collect(),
+        )
+    }
+}
+
+#[allow(dead_code)]
 pub fn get_send_account(payer: Pubkey, wallet: Pubkey, shortcut: [u8; 32]) -> [AccountMeta; 18] {
     get_send_account_with_creator(payer, wallet, shortcut, payer)
 }

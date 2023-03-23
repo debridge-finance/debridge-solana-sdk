@@ -6,6 +6,7 @@ use debridge_solana_sdk_example::{
     accounts::SendViaDebridgeWithSender, instruction::SendMessageViaDebridgeWithProgramSender,
     ID as EXAMPLE_ID, PROGRAM_SENDER_SEED,
 };
+use rand::Rng;
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
 use solana_program::instruction::Instruction;
 use solana_sdk::{
@@ -21,8 +22,9 @@ fn main() {
     let rpc_client: RpcClient = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
 
     let payer = mocks::get_config_keypair();
+    let message = mocks::get_echo_external_call(rand::thread_rng().gen::<[u8; 32]>().into())
+        .expect("Failed to create message");
 
-    let message = hex::decode("a69b6ed0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000050011223300000000000000000000000000000000000000000000000000000000").expect("Failed to decode external code");
     let token_mint = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
 
     let wallet = rpc_client
@@ -85,18 +87,15 @@ fn main() {
         .data(),
     };
 
-    let blockhash = rpc_client
-        .get_latest_blockhash()
-        .expect("Failed to get blockhash");
-    let tx = Transaction::new_signed_with_payer(
-        &[budget_ix, create_wallet, ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        blockhash,
-    );
-
     let signature = rpc_client
-        .send_transaction(&tx)
+        .send_transaction(&Transaction::new_signed_with_payer(
+            &[budget_ix, create_wallet, ix],
+            Some(&payer.pubkey()),
+            &[&payer],
+            rpc_client
+                .get_latest_blockhash()
+                .expect("Failed to get blockhash"),
+        ))
         .expect("Failed to send transaction");
 
     println!("Success! Transaction signature: {:?}", signature);
