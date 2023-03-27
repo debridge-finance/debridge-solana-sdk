@@ -18,6 +18,19 @@ use crate::mocks::get_send_account_with_creator;
 
 mod mocks;
 
+const ECHO_CONTRACT_ADDRESS: &str = "cfcc66ee5397b7cdf7228f7502d1e168518c6bb3";
+const FALLBACK_ADDRESS: &str = "bd1e72155Ce24E57D0A026e0F7420D6559A7e651";
+
+fn find_lagest_wallet(rpc_client: &RpcClient, owner: Pubkey, token_mint: Pubkey) -> Pubkey {
+    rpc_client
+        .get_token_accounts_by_owner(&owner, TokenAccountsFilter::Mint(token_mint))
+        .expect("Failed to get wSol wallets")
+        .iter()
+        .max_by_key(|wallet| wallet.account.lamports)
+        .map(|wallet| Pubkey::from_str(wallet.pubkey.as_str()).expect("Failed to parse wallet"))
+        .expect("There are no payer wallets")
+}
+
 fn main() {
     let rpc_client: RpcClient = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
 
@@ -27,13 +40,7 @@ fn main() {
 
     let token_mint = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
 
-    let wallet = rpc_client
-        .get_token_accounts_by_owner(&payer.pubkey(), TokenAccountsFilter::Mint(token_mint))
-        .expect("Failed to get wSol wallets")
-        .iter()
-        .max_by_key(|wallet| wallet.account.lamports)
-        .map(|wallet| Pubkey::from_str(wallet.pubkey.as_str()).expect("Failed to parse wallet"))
-        .expect("There are no payer wallets");
+    let wallet = find_lagest_wallet(&rpc_client, payer.pubkey(), token_mint);
 
     let budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(230000);
 
@@ -78,10 +85,9 @@ fn main() {
         data: SendMessageViaDebridgeWithProgramSender {
             execution_fee: 0,
             message,
-            fallback_address: hex::decode("bd1e72155Ce24E57D0A026e0F7420D6559A7e651")
+            fallback_address: hex::decode(FALLBACK_ADDRESS)
                 .expect("Failed to decode fallback address"),
-            receiver: hex::decode("cfcc66ee5397b7cdf7228f7502d1e168518c6bb3")
-                .expect("Failed to decode receiver"),
+            receiver: hex::decode(ECHO_CONTRACT_ADDRESS).expect("Failed to decode receiver"),
             target_chain_id: POLYGON_CHAIN_ID,
         }
         .data(),
