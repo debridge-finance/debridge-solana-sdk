@@ -970,6 +970,7 @@ dependencies = [
  "anchor-lang",
  "debridge-solana-sdk",
  "env_to_array",
+ "spl-associated-token-account",
  "spl-token",
 ]
 

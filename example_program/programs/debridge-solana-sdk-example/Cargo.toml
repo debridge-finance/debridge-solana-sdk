@@ -19,5 +19,6 @@ default = []
 [dependencies]
 anchor-lang = "0.26.0"
 spl-token = { version = "3.2.0", features = ["no-entrypoint"] }
+spl-associated-token-account = { version ="1.1.1", features = ["no-entrypoint"] }
 env_to_array = "0.1.1"
 debridge-solana-sdk = {path = "../../../"}

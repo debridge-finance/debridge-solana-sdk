@@ -4,7 +4,7 @@ use anchor_lang::{InstructionData, ToAccountMetas};
 use debridge_solana_sdk::{HashAdapter, POLYGON_CHAIN_ID};
 use debridge_solana_sdk_example::{
     accounts::SendViaDebridgeWithSender, instruction::SendMessageViaDebridgeWithProgramSender,
-    ID as EXAMPLE_ID, PROGRAM_SENDER_SEED,
+    FindProgramSender, FindProgramSenderWallet, ID as EXAMPLE_ID,
 };
 use rand::Rng;
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
@@ -47,17 +47,9 @@ fn main() {
 
     let budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(230000);
 
-    let program_sender = Pubkey::find_program_address(&[PROGRAM_SENDER_SEED], &EXAMPLE_ID).0;
+    let program_sender = Pubkey::find_program_sender().0;
 
-    let program_sender_wallet = Pubkey::find_program_address(
-        &[
-            program_sender.as_ref(),
-            spl_token::ID.as_ref(),
-            wrapped_sol_mint.as_ref(),
-        ],
-        &spl_associated_token_account::ID,
-    )
-    .0;
+    let program_sender_wallet = Pubkey::find_program_sender_wallet(&wrapped_sol_mint).0;
 
     let create_wallet =
         spl_associated_token_account::instruction::create_associated_token_account_idempotent(

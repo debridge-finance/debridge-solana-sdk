@@ -401,6 +401,27 @@ pub struct SendViaDebridgeWithSender<'info> {
     program_sender_wallet: AccountInfo<'info>,
 }
 
+pub trait FindProgramSender {
+    fn find_program_sender() -> (Pubkey, u8) {
+        Pubkey::find_program_address(&[PROGRAM_SENDER_SEED], &ID)
+    }
+}
+impl FindProgramSender for Pubkey {}
+
+pub trait FindProgramSenderWallet {
+    fn find_program_sender_wallet(token_mint: &Pubkey) -> (Pubkey, u8) {
+        Pubkey::find_program_address(
+            &[
+                Pubkey::find_program_sender().0.as_ref(),
+                spl_token::ID.as_ref(),
+                token_mint.as_ref(),
+            ],
+            &spl_associated_token_account::ID,
+        )
+    }
+}
+impl FindProgramSenderWallet for Pubkey {}
+
 #[derive(Accounts)]
 pub struct CheckClaiming<'info> {
     submission: AccountInfo<'info>,
