@@ -638,17 +638,17 @@ pub fn set_send_from_account<'a>(
     account_infos[SEND_FROM_WALLET_INDEX] = send_from_wallet;
 }
 
-const CHAIN_SUPPORT_INFO_INDEX: usize = 4;
-const STATE_INDEX: usize = 7;
-const ASSET_FEE_INDEX: usize = 16;
-const TOKEN_MINT_INDEX: usize = 1;
+pub const CHAIN_SUPPORT_INFO_INDEX: usize = 4;
+pub const STATE_INDEX: usize = 7;
+pub const ASSET_FEE_INDEX: usize = 16;
+pub const TOKEN_MINT_INDEX: usize = 1;
 
-const EXTERNAL_CALL_STORAGE_INDEX: usize = 12;
-const EXTERNAL_CALL_META_INDEX: usize = 13;
-const SEND_FROM_INDEX: usize = 14;
-const SEND_FROM_WALLET_INDEX: usize = 10;
-const SYSTEM_PROGRAM_INDEX: usize = 11;
-const DEBRIDGE_PROGRAM_INDEX: usize = 17;
+pub const EXTERNAL_CALL_STORAGE_INDEX: usize = 12;
+pub const EXTERNAL_CALL_META_INDEX: usize = 13;
+pub const SEND_FROM_INDEX: usize = 14;
+pub const SEND_FROM_WALLET_INDEX: usize = 10;
+pub const SYSTEM_PROGRAM_INDEX: usize = 11;
+pub const DEBRIDGE_PROGRAM_INDEX: usize = 17;
 
 struct MetaTemplate {
     is_signer: bool,

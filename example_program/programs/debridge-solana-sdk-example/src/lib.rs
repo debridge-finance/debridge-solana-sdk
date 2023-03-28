@@ -22,7 +22,11 @@ pub mod debridge_invoke_example {
     }
 
     use anchor_lang::solana_program::{program, program_error::ProgramError};
-    use debridge_solana_sdk::{prelude::*, sending};
+    use debridge_solana_sdk::{
+        prelude::*,
+        sending,
+        sending::{SEND_FROM_INDEX, SEND_FROM_WALLET_INDEX},
+    };
     use spl_token::solana_program::system_instruction;
 
     use super::*;
@@ -291,7 +295,7 @@ pub mod debridge_invoke_example {
     ) -> Result<()> {
         program::invoke(
             &system_instruction::transfer(
-                ctx.remaining_accounts[14].key,
+                ctx.remaining_accounts[SEND_FROM_INDEX].key,
                 ctx.accounts.program_sender.key,
                 estimator::get_native_sender_lamports_expenses(
                     sending::get_chain_native_fix_fee(ctx.remaining_accounts, target_chain_id)
@@ -301,7 +305,7 @@ pub mod debridge_invoke_example {
                 .map_err(|_| ErrorCode::FailedToEstimateExpenses)?,
             ),
             &[
-                ctx.remaining_accounts[14].clone(),
+                ctx.remaining_accounts[SEND_FROM_INDEX].clone(),
                 ctx.accounts.program_sender.clone(),
             ],
         )?;
@@ -309,9 +313,9 @@ pub mod debridge_invoke_example {
         program::invoke(
             &spl_token::instruction::transfer(
                 &spl_token::ID,
-                ctx.remaining_accounts[10].key,
+                ctx.remaining_accounts[SEND_FROM_WALLET_INDEX].key,
                 ctx.accounts.program_sender_wallet.key,
-                ctx.remaining_accounts[14].key,
+                ctx.remaining_accounts[SEND_FROM_INDEX].key,
                 &[],
                 sending::add_all_fees(
                     ctx.remaining_accounts,
@@ -323,9 +327,9 @@ pub mod debridge_invoke_example {
                 .map_err(|_| ErrorCode::FailedToCalculateAmountWithFee)?,
             )?,
             &[
-                ctx.remaining_accounts[10].clone(),
+                ctx.remaining_accounts[SEND_FROM_WALLET_INDEX].clone(),
                 ctx.accounts.program_sender_wallet.clone(),
-                ctx.remaining_accounts[14].clone(),
+                ctx.remaining_accounts[SEND_FROM_INDEX].clone(),
             ],
         )?;
 

@@ -20,10 +20,14 @@ mod mocks;
 
 const ECHO_CONTRACT_ADDRESS: &str = "cfcc66ee5397b7cdf7228f7502d1e168518c6bb3";
 const FALLBACK_ADDRESS: &str = "bd1e72155Ce24E57D0A026e0F7420D6559A7e651";
+const WRAPPED_SOL_MINT: &str = "So11111111111111111111111111111111111111112";
 
-fn find_lagest_wallet(rpc_client: &RpcClient, owner: Pubkey, token_mint: Pubkey) -> Pubkey {
+fn find_biggest_spl_sol_wallet(rpc_client: &RpcClient, owner: Pubkey) -> Pubkey {
     rpc_client
-        .get_token_accounts_by_owner(&owner, TokenAccountsFilter::Mint(token_mint))
+        .get_token_accounts_by_owner(
+            &owner,
+            TokenAccountsFilter::Mint(Pubkey::from_str(WRAPPED_SOL_MINT).unwrap()),
+        )
         .expect("Failed to get wSol wallets")
         .iter()
         .max_by_key(|wallet| wallet.account.lamports)
@@ -38,9 +42,8 @@ fn main() {
     let message = mocks::get_echo_external_call(rand::thread_rng().gen::<[u8; 32]>().into())
         .expect("Failed to create message");
 
-    let token_mint = Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap();
-
-    let wallet = find_lagest_wallet(&rpc_client, payer.pubkey(), token_mint);
+    let wrapped_sol_mint = Pubkey::from_str(WRAPPED_SOL_MINT).unwrap();
+    let wallet = find_biggest_spl_sol_wallet(&rpc_client, payer.pubkey());
 
     let budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(230000);
 
@@ -50,7 +53,7 @@ fn main() {
         &[
             program_sender.as_ref(),
             spl_token::ID.as_ref(),
-            token_mint.as_ref(),
+            wrapped_sol_mint.as_ref(),
         ],
         &spl_associated_token_account::ID,
     )
@@ -60,7 +63,7 @@ fn main() {
         spl_associated_token_account::instruction::create_associated_token_account_idempotent(
             &payer.pubkey(),
             &program_sender,
-            &token_mint,
+            &wrapped_sol_mint,
             &spl_token::ID,
         );
 
