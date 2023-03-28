@@ -10,8 +10,6 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
-use crate::mocks::get_send_account;
-
 mod mocks;
 
 fn main() {
@@ -38,12 +36,11 @@ fn main() {
 
     let ix = Instruction {
         program_id: EXAMPLE_ID,
-        accounts: get_send_account(
+        accounts: mocks::get_send_account(
             payer.pubkey(),
             wallet,
             sha3::Keccak256::hash(message.as_slice()),
         )
-        .expect("Failed to create send accounts list")
         .to_vec(),
         data: SendViaDebridgeWithExecutionFee {
             amount: 100,

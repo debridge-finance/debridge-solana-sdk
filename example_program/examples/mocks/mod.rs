@@ -13,7 +13,7 @@ use solana_sdk::{
 pub fn get_config_keypair() -> Keypair {
     let keypair = option_env!("KEYPAIR_PATH")
         .map(PathBuf::from)
-        .or(dirs::config_dir().map(|p| p.join("solana").join("id.json")))
+        .or_else(|| dirs::config_dir().map(|p| p.join("solana").join("id.json")))
         .unwrap();
     read_keypair_file(keypair).expect("Failed to parse payer keypair")
 }
@@ -24,8 +24,36 @@ macro_rules! pubkey {
     };
 }
 
+#[allow(dead_code)]
+pub fn get_echo_external_call(message: Vec<u8>) -> Option<Vec<u8>> {
+    let prefix = hex::decode("a69b6ed0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000")
+        .expect("Failed to decode prefix");
+    if message.len() < 32 {
+        None
+    } else {
+        Some(
+            prefix
+                .into_iter()
+                .chain(vec![message.len() as u8])
+                .chain(message)
+                .collect(),
+        )
+    }
+}
+
+#[allow(dead_code)]
 pub fn get_send_account(payer: Pubkey, wallet: Pubkey, shortcut: [u8; 32]) -> [AccountMeta; 18] {
-    let external_call_storage = Pubkey::find_external_call_storage_address(&shortcut, &payer).0;
+    get_send_account_with_creator(payer, wallet, shortcut, payer)
+}
+pub fn get_send_account_with_creator(
+    payer: Pubkey,
+    wallet: Pubkey,
+    shortcut: [u8; 32],
+    external_call_creator: Pubkey,
+) -> [AccountMeta; 18] {
+    let external_call_storage =
+        Pubkey::find_external_call_storage_address(&shortcut, &external_call_creator).0;
+    println!("Ex storage: {:?}", external_call_storage);
     [
         AccountMeta {
             is_signer: false,

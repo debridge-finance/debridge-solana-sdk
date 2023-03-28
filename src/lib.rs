@@ -30,6 +30,7 @@ pub mod chain_ids;
 /// This crate gives general errors that may occur in the sdk using
 mod errors;
 
+pub mod estimator;
 /// This module is auxiliary in working with hash
 mod hash;
 
@@ -74,10 +75,10 @@ cfg_match::cfg_match! {
 }
 
 pub mod prelude {
-    pub use super::chain_ids;
-    pub use super::check_claiming as debridge_check_claiming;
-    pub use super::sending as debridge_sending;
-    pub use super::{DEBRIDGE_ID, SETTINGS_ID, SOLANA_CHAIN_ID};
+    pub use super::{
+        chain_ids, check_claiming as debridge_check_claiming, sending as debridge_sending,
+        DEBRIDGE_ID, SETTINGS_ID, SOLANA_CHAIN_ID,
+    };
 }
 
 pub const BPS_DENOMINATOR: u64 = 10000_u64;

@@ -2,8 +2,8 @@
 
 use anchor_lang::{prelude::*, solana_program::sysvar};
 use debridge_solana_sdk::{
-    check_claiming::check_execution_context,
-    sending::{self, SendIx, SendSubmissionParamsInput},
+    check_claiming, estimator,
+    sending::{SendIx, SendSubmissionParamsInput},
 };
 
 declare_id!("5UaXbex7paiRDykrN2GaRPW7j7goEQ1ZWqQvUwnAfFTF");
@@ -18,10 +18,16 @@ pub mod debridge_invoke_example {
         MatchOverflowWhileCalculateInputAmount,
         FailedToCalculateAmountWithFee,
         NotEnoughAccountProvided,
+        FailedToEstimateExpenses,
     }
 
-    use anchor_lang::solana_program::program_error::ProgramError;
-    use debridge_solana_sdk::prelude::*;
+    use anchor_lang::solana_program::{program, program_error::ProgramError};
+    use debridge_solana_sdk::{
+        prelude::*,
+        sending,
+        sending::{SEND_FROM_INDEX, SEND_FROM_WALLET_INDEX},
+    };
+    use spl_token::solana_program::system_instruction;
 
     use super::*;
 
@@ -238,7 +244,6 @@ pub mod debridge_invoke_example {
     /// You have to pay only a transfer fee for sending an execution fee to another chain.
     /// If you claim by yourself, set execution fee to zero, you don’t need to pay transfer fee at all.
     /// Only fixed fee will be taken.
-
     ///
     /// Used `external_call` for this. For evm-like network it will be address of smart contract
     /// function and function's arguments packed in byte vector.
@@ -272,6 +277,86 @@ pub mod debridge_invoke_example {
         Ok(())
     }
 
+    /// One of the function of Debridge protocol is transferring message between two program or
+    /// smart contract. For this, solana uses PDA accounts. With the help of pda accounts,
+    /// the program ensures that it initiated the call to the send function of the debridge program
+    ///
+    /// To use this feature, you need to use [`debridge_solana_sdk::sending::set_send_from_account`]
+    /// and provide PDA account and wallet that belongs to this account. Then you have to use debrige
+    /// sdk function with `_signed` postfix. In this example we use [`debridge_solana_sdk::sending::invoke_send_message_signed`].
+    /// These functions additionally need to pass signers seeds and bump.
+    pub fn send_message_via_debridge_with_program_sender<'info>(
+        ctx: Context<'_, '_, '_, 'info, SendViaDebridgeWithSender<'info>>,
+        target_chain_id: [u8; 32],
+        receiver: Vec<u8>,
+        execution_fee: u64,
+        fallback_address: Vec<u8>,
+        message: Vec<u8>,
+    ) -> Result<()> {
+        program::invoke(
+            &system_instruction::transfer(
+                ctx.remaining_accounts[SEND_FROM_INDEX].key,
+                ctx.accounts.program_sender.key,
+                estimator::get_native_sender_lamports_expenses(
+                    sending::get_chain_native_fix_fee(ctx.remaining_accounts, target_chain_id)
+                        .map_err(|_| ErrorCode::FailedToCalculateAmountWithFee)?,
+                    message.len(),
+                )
+                .map_err(|_| ErrorCode::FailedToEstimateExpenses)?,
+            ),
+            &[
+                ctx.remaining_accounts[SEND_FROM_INDEX].clone(),
+                ctx.accounts.program_sender.clone(),
+            ],
+        )?;
+
+        program::invoke(
+            &spl_token::instruction::transfer(
+                &spl_token::ID,
+                ctx.remaining_accounts[SEND_FROM_WALLET_INDEX].key,
+                ctx.accounts.program_sender_wallet.key,
+                ctx.remaining_accounts[SEND_FROM_INDEX].key,
+                &[],
+                sending::add_all_fees(
+                    ctx.remaining_accounts,
+                    target_chain_id,
+                    0,
+                    execution_fee,
+                    false,
+                )
+                .map_err(|_| ErrorCode::FailedToCalculateAmountWithFee)?,
+            )?,
+            &[
+                ctx.remaining_accounts[SEND_FROM_WALLET_INDEX].clone(),
+                ctx.accounts.program_sender_wallet.clone(),
+                ctx.remaining_accounts[SEND_FROM_INDEX].clone(),
+            ],
+        )?;
+
+        let mut accounts = ctx.remaining_accounts.to_vec();
+
+        sending::set_send_from_account(
+            accounts.as_mut_slice(),
+            ctx.accounts.program_sender.clone(),
+            ctx.accounts.program_sender_wallet.clone(),
+        );
+
+        let bump = *ctx.bumps.get("program_sender").expect("Failed to get bump");
+
+        sending::invoke_send_message_signed(
+            message,
+            target_chain_id,
+            receiver,
+            execution_fee,
+            fallback_address,
+            accounts.as_slice(),
+            &[&[PROGRAM_SENDER_SEED, &[bump]]],
+        )
+        .map_err(ProgramError::from)?;
+
+        Ok(())
+    }
+
     /// Debridge protocol allows to execute some Solana instructions from evm-like chains.
     /// Execution occurs using the debridge's `execute_external_call` instruction .
     /// The `execute_external_call` instruction invokes provided from evm instruction
@@ -288,7 +373,7 @@ pub mod debridge_invoke_example {
         source_chain_id: [u8; 32],
         native_sender: Option<Vec<u8>>,
     ) -> Result<()> {
-        check_execution_context(
+        check_claiming::check_execution_context(
             &ctx.accounts.instructions,
             &ctx.accounts.submission,
             &ctx.accounts.submission_authority,
@@ -301,6 +386,41 @@ pub mod debridge_invoke_example {
 
 #[derive(Accounts)]
 pub struct SendViaDebridge {}
+
+pub const PROGRAM_SENDER_SEED: &[u8] = b"PROGRAM_SENDER";
+
+#[derive(Accounts)]
+pub struct SendViaDebridgeWithSender<'info> {
+    #[account(
+        mut,
+        seeds = [PROGRAM_SENDER_SEED],
+        bump,
+    )]
+    program_sender: AccountInfo<'info>,
+    #[account(mut)]
+    program_sender_wallet: AccountInfo<'info>,
+}
+
+pub trait FindProgramSender {
+    fn find_program_sender() -> (Pubkey, u8) {
+        Pubkey::find_program_address(&[PROGRAM_SENDER_SEED], &ID)
+    }
+}
+impl FindProgramSender for Pubkey {}
+
+pub trait FindProgramSenderWallet {
+    fn find_program_sender_wallet(token_mint: &Pubkey) -> (Pubkey, u8) {
+        Pubkey::find_program_address(
+            &[
+                Pubkey::find_program_sender().0.as_ref(),
+                spl_token::ID.as_ref(),
+                token_mint.as_ref(),
+            ],
+            &spl_associated_token_account::ID,
+        )
+    }
+}
+impl FindProgramSenderWallet for Pubkey {}
 
 #[derive(Accounts)]
 pub struct CheckClaiming<'info> {

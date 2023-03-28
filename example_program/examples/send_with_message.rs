@@ -3,14 +3,13 @@ use std::str::FromStr;
 use anchor_lang::InstructionData;
 use debridge_solana_sdk::{HashAdapter, POLYGON_CHAIN_ID};
 use debridge_solana_sdk_example::{instruction::SendMessageViaDebridge, ID as EXAMPLE_ID};
+use rand::Rng;
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
 use solana_program::instruction::Instruction;
 use solana_sdk::{
     compute_budget::ComputeBudgetInstruction, pubkey::Pubkey, signature::Signer,
     transaction::Transaction,
 };
-
-use crate::mocks::get_send_account;
 
 mod mocks;
 
@@ -19,7 +18,8 @@ fn main() {
 
     let payer = mocks::get_config_keypair();
 
-    let message = hex::decode("a69b6ed0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000050011223344556600000000000000000000000000000000000000000000000000").expect("Failed to decode external code");
+    let message = mocks::get_echo_external_call(rand::thread_rng().gen::<[u8; 32]>().into())
+        .expect("Failed to create message");
 
     let wallet = rpc_client
         .get_token_accounts_by_owner(
@@ -38,7 +38,7 @@ fn main() {
 
     let ix = Instruction {
         program_id: EXAMPLE_ID,
-        accounts: get_send_account(
+        accounts: mocks::get_send_account(
             payer.pubkey(),
             wallet,
             sha3::Keccak256::hash(message.as_slice()),

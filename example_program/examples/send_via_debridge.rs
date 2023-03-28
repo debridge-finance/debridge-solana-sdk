@@ -10,8 +10,6 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
-use crate::mocks::get_send_account;
-
 mod mocks;
 
 fn get_wrapped_sol_wallet(rpc_client: &RpcClient, payer: Pubkey) -> Pubkey {
@@ -37,7 +35,7 @@ fn main() {
     let cross_chain_message = vec![];
     let ix_with_debridge_send_inside = Instruction {
         program_id: EXAMPLE_ID,
-        accounts: get_send_account(
+        accounts: mocks::get_send_account(
             payer.pubkey(),
             get_wrapped_sol_wallet(&rpc_client, payer.pubkey()),
             sha3::Keccak256::hash(cross_chain_message.as_slice()),

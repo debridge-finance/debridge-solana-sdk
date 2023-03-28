@@ -44,6 +44,8 @@ pub enum Error {
     WrongDebridgeProgramId,
     #[error("Provided external storage with wrong. External storage have to be not initialized or be in Transferred state")]
     ExternalStorageWrongState,
+    #[error("Failed to get rent")]
+    FailedToGetRent,
 }
 
 use solana_program::program_error::ProgramError;
