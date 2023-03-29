@@ -10,10 +10,6 @@ pub enum Error {
     WrongClaimParentSubmission,
     #[error("Wrong parent debridge-submission authority. This method must be called by debridge program in execute_external call")]
     WrongClaimParentSubmissionAuth,
-    #[error("Wrong parent debridge-submission native sender. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentNativeSender,
-    #[error("Wrong parent debridge-submission source chain id. This method must be called by debridge program in execute_external call")]
-    WrongClaimParentSourceChainId,
     #[error("Wrong parent ix program id. This method must be called by debridge program in execute_external call")]
     WrongClaimParentProgramId,
     #[error("Failed while account deserializing")]
@@ -46,6 +42,20 @@ pub enum Error {
     ExternalStorageWrongState,
     #[error("Failed to get rent")]
     FailedToGetRent,
+    #[error("Wrong parent debridge-submission claimer. This method must be called by debridge program in execute_external call")]
+    WrongClaimParentClaimer,
+    #[error("Wrong parent debridge-submission receiver. This method must be called by debridge program in execute_external call")]
+    WrongClaimParentReceiver,
+    #[error("Wrong parent debridge-submission fallback address. This method must be called by debridge program in execute_external call")]
+    WrongClaimParentFallbackAddress,
+    #[error("Wrong parent debridge-submission token mint. This method must be called by debridge program in execute_external call")]
+    WrongClaimParentTokenMint,
+    #[error("Wrong parent debridge-submission source chain id. This method must be called by debridge program in execute_external call")]
+    WrongClaimParentSourceChainId,
+    #[error("Wrong parent debridge-submission account key. This method must be called by debridge program in execute_external call")]
+    WrongClaimParentSubmissionAccountKey,
+    #[error("Wrong parent debridge-submission native sender. This method must be called by debridge program in execute_external call")]
+    WrongClaimParentNativeSender,
 }
 
 use solana_program::program_error::ProgramError;
