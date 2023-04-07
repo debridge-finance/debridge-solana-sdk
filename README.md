@@ -69,14 +69,14 @@ pub struct SendViaDebridge {}
 
 ### More
 To see program examples please visit:
-- [send_via_debridge](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L32)
-- [send_via_debridge_with_native_fixed_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L57)
-- [send_via_debridge_with_exact_amount](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L57)
-- [send_via_debridge_with_asset_fixed_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L85)
-- [send_via_debridge_with_execution_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L156)
-- [send_via_debridge_with_external_call](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L189)
-- [send_message_via_debridge](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L234)
-- [check_claiming](https://github.com/debridge-finance/debridge-solana-sdk/blob/ecca89cc61ba9b70ab8ef82fe0968e0b8c6c16fd/example_program/programs/debridge-solana-sdk-example/src/lib.rs#L264)
+- [send_via_debridge](https://github.com/debridge-finance/debridge-solana-sdk/blob/7bb2ed38a135d3550dadfd00bdc78f50c19a701d/example-program/programs/debridge-solana-sdk-example/src/lib.rs#L38)
+- [send_via_debridge_with_native_fixed_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/7bb2ed38a135d3550dadfd00bdc78f50c19a701d/example-program/programs/debridge-solana-sdk-example/src/lib.rs#L69)
+- [send_via_debridge_with_exact_amount](https://github.com/debridge-finance/debridge-solana-sdk/blob/7bb2ed38a135d3550dadfd00bdc78f50c19a701d/example-program/programs/debridge-solana-sdk-example/src/lib.rs#L140)
+- [send_via_debridge_with_asset_fixed_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/7bb2ed38a135d3550dadfd00bdc78f50c19a701d/example-program/programs/debridge-solana-sdk-example/src/lib.rs#L69)
+- [send_via_debridge_with_execution_fee](https://github.com/debridge-finance/debridge-solana-sdk/blob/7bb2ed38a135d3550dadfd00bdc78f50c19a701d/example-program/programs/debridge-solana-sdk-example/src/lib.rs#L177)
+- [send_via_debridge_with_external_call](https://github.com/debridge-finance/debridge-solana-sdk/blob/7bb2ed38a135d3550dadfd00bdc78f50c19a701d/example-program/programs/debridge-solana-sdk-example/src/lib.rs#L211)
+- [send_message_via_debridge](https://github.com/debridge-finance/debridge-solana-sdk/blob/7bb2ed38a135d3550dadfd00bdc78f50c19a701d/example-program/programs/debridge-solana-sdk-example/src/lib.rs#L259)
+- [check_claiming](https://github.com/debridge-finance/debridge-solana-sdk/blob/7bb2ed38a135d3550dadfd00bdc78f50c19a701d/example-program/programs/debridge-solana-sdk-example/src/lib.rs#L371)
 
 ### Build and deploy example contract
 
