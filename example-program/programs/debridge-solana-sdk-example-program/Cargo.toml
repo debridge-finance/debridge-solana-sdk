@@ -1,12 +1,12 @@
 [package]
-name = "debridge-solana-sdk-example"
+name = "debridge-solana-sdk-example-program"
 version = "0.0.0"
 publish = false
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "debridge_solana_sdk_example"
+name = "debridge_solana_sdk_example_program"
 doctest = false
 
 [features]

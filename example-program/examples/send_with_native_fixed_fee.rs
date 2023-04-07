@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use anchor_lang::InstructionData;
 use debridge_solana_sdk::{HashAdapter, POLYGON_CHAIN_ID};
-use debridge_solana_sdk_example::{
+use debridge_solana_sdk_example_program::{
     instruction::SendViaDebridgeWithNativeFixedFee, ID as EXAMPLE_ID,
 };
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};

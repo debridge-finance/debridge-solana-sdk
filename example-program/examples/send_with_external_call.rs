@@ -2,7 +2,9 @@ use std::str::FromStr;
 
 use anchor_lang::InstructionData;
 use debridge_solana_sdk::{reserved_flags::SetReservedFlag, HashAdapter, POLYGON_CHAIN_ID};
-use debridge_solana_sdk_example::{instruction::SendViaDebridgeWithExternalCall, ID as EXAMPLE_ID};
+use debridge_solana_sdk_example_program::{
+    instruction::SendViaDebridgeWithExternalCall, ID as EXAMPLE_ID,
+};
 use rand::Rng;
 use solana_client::{rpc_client::RpcClient, rpc_request::TokenAccountsFilter};
 use solana_program::instruction::Instruction;
