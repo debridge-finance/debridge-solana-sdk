@@ -2,9 +2,13 @@
 
 ## About
 
-Debridge-solana-sdk allows you to easily and quickly connect your Solana programs to the debridge infrastructure. Debridge
+debridge-solana-sdk allows you to easily and quickly connect your Solana programs to the debridge infrastructure. Debridge
 protocol enables decentralized transfers of arbitrary messages and value between various blockchains. See Debridge 
-documentation for more information https://docs.debridge.finance/.
+documentation for more information [docs](https://docs.debridge.finance/).
+
+### Project Stucture
+- At the root of the git repository you will find auxiliary methods to integrate debridge
+- In [example-program](./example-program) folder you will find an example program with different usage cases
 
 ## Create a simple message and value transferring to other chain
 
