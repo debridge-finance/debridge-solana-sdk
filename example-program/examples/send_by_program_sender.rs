@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use anchor_lang::{InstructionData, ToAccountMetas};
 use debridge_solana_sdk::{HashAdapter, POLYGON_CHAIN_ID};
-use debridge_solana_sdk_example::{
+use debridge_solana_sdk_example_program::{
     accounts::SendViaDebridgeWithSender, instruction::SendMessageViaDebridgeWithProgramSender,
     FindProgramSender, FindProgramSenderWallet, ID as EXAMPLE_ID,
 };
