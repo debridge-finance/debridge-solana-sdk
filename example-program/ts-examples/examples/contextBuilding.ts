@@ -124,12 +124,15 @@ export async function buildSendContextWithClient(
   const context = await deBridge.buildSendContext(
     sender,
     null,
+    0,
     tokenMint,
     receiver,
     chainTo,
     useAssetFee,
+    0,
     externalCall?.fallbackAddress || receiver,
     externalCall?.flags,
+    0,
     externalCall?.data,
   );
   const accounts = context.asIdl;
