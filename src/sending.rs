@@ -177,6 +177,10 @@ pub struct InitExternalCallIx {
 
 /// Create account for storing external call buffer
 ///
+/// In the case of a large external call it can be called
+/// by a separate transaction in conjunction with
+/// `update_external_call` method from TS client
+///
 /// # Arguments
 /// * `external_call` - instructions sending in target chain
 /// * `account_infos` - account forming by client from debridge-typescript-sdk
