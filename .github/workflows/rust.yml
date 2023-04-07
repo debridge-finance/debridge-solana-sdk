@@ -71,23 +71,20 @@ jobs:
     - name: Build
       uses: actions-rs/cargo@v1
       with:
-        working-directory: ./example-program
         command: build
-        args: --all --verbose
+        args: --manifest-path=example-program/Cargo.toml --verbose
 
     - name: Clippy
       uses: actions-rs/cargo@v1
       with:
-        working-directory: ./example-program
         command: clippy
-        args: --all-targets -- -D warnings
+        args: --manifest-path=example-program/Cargo.toml -- -D warnings
 
     - name: Tests
       uses: actions-rs/cargo@v1
       with:
-        working-directory: ./example-program
         command: test
-        args: --all --verbose
+        args: --manifest-path=example-program/Cargo.toml --verbose
 
   linting_ts_example:
     name: Linting TS example
