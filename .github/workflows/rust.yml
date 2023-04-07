@@ -19,6 +19,14 @@ jobs:
         override: true
         components: clippy
 
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.cargo
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
     - name: Build
       uses: actions-rs/cargo@v1
       with:
@@ -37,3 +45,66 @@ jobs:
         command: test
         args: --all --verbose
 
+
+  build_example:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.cargo
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        components: clippy
+
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        working-directory: ./example-program
+        command: build
+        args: --all --verbose
+
+    - name: Clippy
+      uses: actions-rs/cargo@v1
+      with:
+        working-directory: ./example-program
+        command: clippy
+        args: --all-targets -- -D warnings
+
+    - name: Tests
+      uses: actions-rs/cargo@v1
+      with:
+        working-directory: ./example-program
+        command: test
+        args: --all --verbose
+
+  linting_ts_example:
+    name: Linting TS example
+    runs-on: ubuntu-latest # o
+    steps: # 
+      - name: Install NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Code Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        working-directory: ./example-program/ts-examples 
+        run: npm ci
+
+      - name: Code Linting
+        working-directory: ./example-program/ts-examples
+        run: npm run lint
