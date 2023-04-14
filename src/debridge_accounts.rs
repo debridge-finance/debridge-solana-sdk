@@ -68,8 +68,8 @@ impl Discriminator for SubmissionAccount {
 
 /// Internal information about chain support and commissions within it
 /// # Variants
-/// * [`ChainSupportInfoVariant::NotSupported`] - this chain not supported
-/// * [`ChainSupportInfoVariant::Supported`] - this chain supported and we have `fixed_fee` & `transfer_fee` values for it
+/// * [`ChainSupportInfo::NotSupported`] - this chain not supported
+/// * [`ChainSupportInfo::Supported`] - this chain supported and we have `fixed_fee` & `transfer_fee` values for it
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
 pub enum ChainSupportInfo {
     NotSupported,
