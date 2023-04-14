@@ -15,7 +15,7 @@ use crate::{
     errors::InvokeError,
     hash::HashAdapter,
     keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
-    reserved_flags::SetReservedFlag,
+    flags::SetReservedFlag,
     Error, Pubkey, SolanaKeccak256, BPS_DENOMINATOR, DEBRIDGE_ID, SOLANA_CHAIN_ID,
 };
 
@@ -42,7 +42,7 @@ pub struct SendSubmissionParamsInput {
     /// Reward for execution claim transaction in target chain
     pub execution_fee: u64,
     /// Flags for additional protocol features
-    pub reserved_flag: [u8; 32],
+    pub flags: [u8; 32],
     /// Reserve address for sending tokens if external call fails
     pub fallback_address: Vec<u8>,
     /// Keccak256 hash of external call buffer
@@ -57,7 +57,7 @@ impl SendSubmissionParamsInput {
     pub fn execution_fee_only(execution_fee: u64) -> Self {
         SendSubmissionParamsInput {
             execution_fee,
-            reserved_flag: [0; 32],
+            flags: [0; 32],
             fallback_address: vec![0; 20],
             external_call_shortcut: SolanaKeccak256::hash(&[]),
         }
@@ -69,16 +69,16 @@ impl SendSubmissionParamsInput {
     /// * `external_call` - instructions sending in target chain
     /// * `execution_fee` - amount of execution fee
     /// * `fallback_address` -  reserve address for sending tokens if external call fails
-    /// * `reserved_flag` - flags for additional debridge protocol features
+    /// * `flags` - flags for additional debridge protocol features
     pub fn with_external_call(
         external_call: Vec<u8>,
         execution_fee: u64,
         fallback_address: Vec<u8>,
-        reserved_flag: [u8; 32],
+        flags: [u8; 32],
     ) -> Self {
         SendSubmissionParamsInput {
             execution_fee,
-            reserved_flag,
+            flags,
             fallback_address,
             external_call_shortcut: SolanaKeccak256::hash(external_call.as_slice()),
         }
@@ -95,13 +95,13 @@ impl SendSubmissionParamsInput {
         execution_fee: u64,
         fallback_address: Vec<u8>,
     ) -> Self {
-        let mut reserved_flags = [0; 32];
-        reserved_flags.set_revert_if_external_call();
-        reserved_flags.set_proxy_with_sender();
+        let mut flags = [0; 32];
+        flags.set_revert_if_external_call();
+        flags.set_proxy_with_sender();
 
         SendSubmissionParamsInput {
             execution_fee,
-            reserved_flag: reserved_flags,
+            flags,
             fallback_address,
             external_call_shortcut: SolanaKeccak256::hash(external_call.as_slice()),
         }
@@ -356,7 +356,7 @@ mod tests {
             amount: 1000,
             submission_params: Some(SendSubmissionParamsInput {
                 execution_fee: 100,
-                reserved_flag: [1; 32],
+                flags: [1; 32],
                 fallback_address: vec![15; 32],
                 external_call_shortcut: [16; 32],
             }),

@@ -61,28 +61,28 @@ impl CheckReservedFlag for &[u8; 32] {
 }
 impl CheckReservedFlag for &SendSubmissionParamsInput {
     fn check_bit(self, bit: u8) -> bool {
-        self.reserved_flag.check_bit(bit)
+        self.flags.check_bit(bit)
     }
     fn check_unwrap_eth(self) -> bool {
-        self.reserved_flag.check_unwrap_eth()
+        self.flags.check_unwrap_eth()
     }
     fn check_revert_if_external_call(self) -> bool {
-        self.reserved_flag.check_revert_if_external_call()
+        self.flags.check_revert_if_external_call()
     }
     fn check_proxy_with_sender(self) -> bool {
-        self.reserved_flag.check_proxy_with_sender()
+        self.flags.check_proxy_with_sender()
     }
     fn check_send_hashed_data(self) -> bool {
-        self.reserved_flag.check_send_hashed_data()
+        self.flags.check_send_hashed_data()
     }
     fn check_direct_flow(self) -> bool {
-        self.reserved_flag.check_direct_flow()
+        self.flags.check_direct_flow()
     }
 }
 
 #[cfg(test)]
 mod flag_test {
-    use crate::reserved_flags::{CheckReservedFlag, SetReservedFlag};
+    use crate::flags::{CheckReservedFlag, SetReservedFlag};
 
     #[test]
     fn bit_test() {

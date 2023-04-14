@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anchor_lang::InstructionData;
-use debridge_solana_sdk::{reserved_flags::SetReservedFlag, HashAdapter, POLYGON_CHAIN_ID};
+use debridge_solana_sdk::{flags::SetReservedFlag, HashAdapter, POLYGON_CHAIN_ID};
 use debridge_solana_sdk_example_program::{
     instruction::SendViaDebridgeWithExternalCall, ID as EXAMPLE_ID,
 };
@@ -54,7 +54,7 @@ fn main() {
             receiver: hex::decode("cfcc66ee5397b7cdf7228f7502d1e168518c6bb3")
                 .expect("Failed to decode receiver"),
             target_chain_id: POLYGON_CHAIN_ID,
-            reserved_flag: flags,
+            flags,
         }
         .data(),
     };
