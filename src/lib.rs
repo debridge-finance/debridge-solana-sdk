@@ -1,6 +1,6 @@
 extern crate core;
 
-pub mod reserved_flags;
+pub mod flags;
 
 use solana_program::pubkey::Pubkey;
 

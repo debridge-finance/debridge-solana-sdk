@@ -215,7 +215,7 @@ pub mod debridge_invoke_example {
         receiver: Vec<u8>,
         execution_fee: u64,
         fallback_address: Vec<u8>,
-        reserved_flag: [u8; 32],
+        flags: [u8; 32],
         external_call: Vec<u8>,
     ) -> Result<()> {
         debridge_sending::invoke_init_external_call(
@@ -232,7 +232,7 @@ pub mod debridge_invoke_example {
                 external_call,
                 execution_fee,
                 fallback_address,
-                reserved_flag,
+                flags,
             )),
             referral_code: None,
         };
