@@ -13,9 +13,9 @@ use crate::{
         INIT_EXTERNAL_CALL_DISCRIMINATOR, SEND_DISCRIMINATOR,
     },
     errors::InvokeError,
+    flags::SetReservedFlag,
     hash::HashAdapter,
     keys::{AssetFeeInfoPubkey, BridgePubkey, ChainSupportInfoPubkey},
-    flags::SetReservedFlag,
     Error, Pubkey, SolanaKeccak256, BPS_DENOMINATOR, DEBRIDGE_ID, SOLANA_CHAIN_ID,
 };
 
@@ -85,6 +85,12 @@ impl SendSubmissionParamsInput {
     }
 
     /// Create submission params for sending message to other chain
+    ///
+    /// This path is the default path for sending an authorised message
+    /// on the EVM network. If your case is simple, this is probably the
+    /// method you need.
+    ///
+    /// For everything else, please use [`SendSubmissionParamsInput::with_external_call`]
     ///
     /// # Arguments
     /// * `external_call` - instructions sending in target chain
