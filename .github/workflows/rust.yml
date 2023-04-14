@@ -43,7 +43,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --all --verbose
+        args: --all --doc --verbose
+
+    - name: Doc
+      uses: actions-rs/cargo@v1
+      with:
+        command: doc
+        args: --no-deps
 
 
   build_example:
@@ -84,7 +90,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --manifest-path=example-program/Cargo.toml --verbose
+        args: --manifest-path=example-program/Cargo.toml --doc --verbose
+
+    - name: Doc
+      uses: actions-rs/cargo@v1
+      with:
+        command: doc
+        args: --no-deps
 
   linting_ts_example:
     name: Linting TS example
