@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.26.0",
-    "@debridge-finance/solana-contracts-client": "github:debridge-finance/solana-contracts-client#v2.4.3",
+    "@debridge-finance/solana-contracts-client": "^2.4.3",
     "@debridge-finance/solana-utils": "3.0.0",
     "@solana/web3.js": "1.73.2",
     "argparse": "2.0.1",
