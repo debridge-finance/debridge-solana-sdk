@@ -124,64 +124,17 @@ export async function buildSendContextWithClient(
   const context = await deBridge.buildSendContext(
     sender,
     null,
-    0,
     tokenMint,
     receiver,
     chainTo,
     useAssetFee,
-    0,
     externalCall?.fallbackAddress || receiver,
     externalCall?.flags,
-    0,
     externalCall?.data,
   );
-  const accounts = context.asIdl;
-  const remainingAccounts: AccountMeta[] = [
-    { isSigner: false, isWritable: true, pubkey: accounts.bridgeCtx.bridge },
-    { isSigner: false, isWritable: true, pubkey: accounts.bridgeCtx.tokenMint },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: accounts.bridgeCtx.stakingWallet,
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: accounts.bridgeCtx.mintAuthority,
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: accounts.bridgeCtx.chainSupportInfo,
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: accounts.bridgeCtx.settingsProgram,
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: accounts.bridgeCtx.splTokenProgram,
-    },
-    { isSigner: false, isWritable: true, pubkey: accounts.stateCtx.state },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: accounts.stateCtx.feeBeneficiary,
-    },
-    { isSigner: false, isWritable: true, pubkey: accounts.nonceStorage },
-    { isSigner: false, isWritable: true, pubkey: accounts.sendFromWallet },
-    { isSigner: false, isWritable: false, pubkey: accounts.systemProgram },
-    { isSigner: false, isWritable: true, pubkey: accounts.externalCallStorage },
-    { isSigner: false, isWritable: true, pubkey: accounts.externalCallMeta },
-    { isSigner: true, isWritable: true, pubkey: accounts.sendFrom },
-    { isSigner: false, isWritable: false, pubkey: accounts.discount },
-    { isSigner: false, isWritable: false, pubkey: accounts.bridgeFee },
-    { isSigner: false, isWritable: false, pubkey: deBridge.program.programId },
-  ];
+  const accounts = context.asAccountMeta;
 
-  return remainingAccounts;
+  return [...accounts, { isWritable: false, isSigner: false, pubkey: deBridge.program.programId }];
 }
 
 export async function buildSendContext(

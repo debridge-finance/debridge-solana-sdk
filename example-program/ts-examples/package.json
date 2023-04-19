@@ -22,12 +22,12 @@
     "lint:fix": "eslint --config .eslintrc \"examples/**/*.{js,ts}\" --fix"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.26.0",
-    "@debridge-finance/solana-contracts-client": "2.3.0",
-    "@debridge-finance/solana-utils": "^3.0.0",
-    "@solana/web3.js": "^1.73.2",
-    "argparse": "^2.0.1",
-    "dotenv": "^16.0.3",
-    "ts-node": "^10.9.1"
+    "@coral-xyz/anchor": "0.26.0",
+    "@debridge-finance/solana-contracts-client": "github:debridge-finance/solana-contracts-client#v2.4.3",
+    "@debridge-finance/solana-utils": "3.0.0",
+    "@solana/web3.js": "1.73.2",
+    "argparse": "2.0.1",
+    "dotenv": "16.0.3",
+    "ts-node": "10.9.1"
   }
 }
