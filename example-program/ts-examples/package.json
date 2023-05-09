@@ -23,8 +23,10 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.26.0",
+    "@debridge-finance/debridge-external-call": "1.0.7",
     "@debridge-finance/solana-contracts-client": "^2.4.3",
     "@debridge-finance/solana-utils": "3.0.0",
+    "@solana/spl-token": "0.3.7",
     "@solana/web3.js": "1.73.2",
     "argparse": "2.0.1",
     "dotenv": "16.0.3",
