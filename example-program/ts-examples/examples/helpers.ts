@@ -12,7 +12,13 @@ config();
 
 export class ParsePubkey extends Action {
   call(parser: ArgumentParser, namespace: Namespace, values: string | string[], optionString: string | null) {
-    namespace[this.dest] = new PublicKey(values as string);
+    let result: PublicKey | PublicKey[];
+    if (Array.isArray(values)) {
+      result = values.map((v) => new PublicKey(v));
+    } else {
+      result = new PublicKey(values);
+    }
+    namespace[this.dest] = result;
   }
 }
 
