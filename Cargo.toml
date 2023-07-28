@@ -1,6 +1,6 @@
 [package]
 name = "debridge-solana-sdk"
-version = "1.0.1"
+version = "1.0.2"
 description = "debridge-solana-sdk allows you to easily and quickly connect your Solana programs to the debridge infrastructure. Debridge protocol enables decentralized transfers of arbitrary messages and value between various blockchains."
 license = "LGPL-3.0"
 edition = "2021"
@@ -20,4 +20,4 @@ sha3 = "0.10.6"
 env_to_array = "0.1.1"
 cfg-match = "0.2.1"
 derive_builder = "0.12.0"
-
+some-to-err = "0.2.1"

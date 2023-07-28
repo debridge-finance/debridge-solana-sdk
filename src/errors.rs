@@ -75,6 +75,8 @@ pub enum Error {
     WrongClaimParentSubmissionAccountKey,
     #[error("Wrong parent debridge-submission native sender. This method must be called by debridge program in execute_external call")]
     WrongClaimParentNativeSender,
+    #[error("Account submission auth validation failed. Either an invalid submission was submitted, or an attempt was made to execute an instruction related to a different submission id")]
+    SubmissionAuthValidationFailed,
 }
 
 use solana_program::program_error::ProgramError;

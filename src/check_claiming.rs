@@ -22,6 +22,8 @@ use solana_program::{
     pubkey::Pubkey, sysvar, sysvar::instructions,
 };
 
+use some_to_err::*;
+
 use crate::{
     debridge_accounts::{SubmissionAccount, TryFromAccount, EXECUTE_EXTERNAL_CALL_DISCRIMINATOR},
     Error, DEBRIDGE_ID,
@@ -87,6 +89,13 @@ impl ValidatedExecuteExtCallIx {
 
     pub fn get_submission_auth(&self) -> Result<Pubkey, Error> {
         get_pubkey_by_index(&self.0, 6)
+    }
+
+    pub fn validate_submission_auth(&self, candidate: &Pubkey) -> Result<(), Error> {
+        self.get_submission_auth()?
+            .ne(candidate)
+            .then_some(Error::SubmissionAuthValidationFailed)
+            .err_or(())
     }
 
     /// Validates that the provided submission account matches the expected values according
