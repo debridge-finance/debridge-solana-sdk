@@ -3,12 +3,13 @@ seeds = false
 skip-lint = false
 [programs.localnet]
 debridge-solana-sdk-example-program- = "5UaXbex7paiRDykrN2GaRPW7j7goEQ1ZWqQvUwnAfFTF"
+incrementor = "RsJUECkXgzsAkFxXgjuaHwxwzZZ1rbckyWnu8xYwZN4"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "Localnet"
 wallet = "/home/easy/.config/solana/id.json"
 
 [scripts]
