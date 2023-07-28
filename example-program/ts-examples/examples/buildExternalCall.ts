@@ -97,7 +97,7 @@ export async function buildTransferExtCall(claimMint: PublicKey, destinationWall
     const destinationATA = getAssociatedTokenAddressSync(claimMint, destinationWallet);
 
     /**
-     * We create a normal solana instruction by creating an ATA for the destionation pubkey
+     * We create a normal solana instruction by creating an ATA for the destination pubkey
      * on behalf of the submission auth (by specifying an explicit placeholder).
      *
      * This will be paid from the amount of SOLs specified in the Expenses,

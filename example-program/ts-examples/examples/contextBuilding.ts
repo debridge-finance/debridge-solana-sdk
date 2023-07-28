@@ -176,7 +176,7 @@ export async function buildSendContext(
       break;
     }
     default: {
-      throw new Error("unkown mode");
+      throw new Error("unknown mode");
     }
   }
 
