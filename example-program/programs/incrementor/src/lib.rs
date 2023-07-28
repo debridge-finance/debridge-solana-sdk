@@ -4,14 +4,16 @@
 use anchor_lang::{prelude::*, solana_program::sysvar};
 use debridge_solana_sdk::check_claiming;
 
-declare_id!("RsJUECkXgzsAkFxXgjuaHwxwzZZ1rbckyWnu8xYwZN4");
+declare_id!("deincZzsdCg8DjeLsZjA9sTJw2qWP32Bty9aL44FNUk");
 
 #[program]
 pub mod incrementor {
     use super::*;
 
     #[derive(Accounts)]
-    pub struct InrecementGlobalState<'info> {
+    pub struct IncrementGlobalState<'info> {
+        // NOTE: For `global_state` you can use constant `Pubkey` calculated beforehand
+        // Pubkey (bs58): `266YXq5ZKDnFMfW4c4hqXK5RFSsU9QZxKWtvjXW6sRjt`
         #[account(
             init_if_needed,
             seeds = [
@@ -22,13 +24,55 @@ pub mod incrementor {
             payer = payer,
         )]
         global_state: Account<'info, GlobalState>,
+        // NOTE: For `payer` you should use `AUTH_PLACEHOLDER`
+        // AUTH_PLACEHOLDER (bs58): `2iBUASRfDHgEkuZ91Lvos5NxwnmiryHrNbWBfEVqHRQZ`
         #[account(mut)]
         payer: Signer<'info>,
+        // NOTE: Constant (in bs58): `Sysvar1nstructions1111111111111111111111111`
         #[account(address = sysvar::instructions::ID)]
         instructions: AccountInfo<'info>,
+        // NOTE: Constant (in bs58): `11111111111111111111111111111111`
         system_program: Program<'info, System>,
     }
-    pub fn increment_global_state(ctx: Context<InrecementGlobalState>) -> Result<()> {
+
+    /// This instruction can be called by anyone from another network supported by Debridge
+    ///
+    /// This instruction increments the global state of this contract by one
+    //
+    // From client side this instruction looks like:
+    // ```ron
+    // Instruction {
+    //     program_id: deincZzsdCg8DjeLsZjA9sTJw2qWP32Bty9aL44FNUk,
+    //     accounts: [
+    //         AccountMeta {
+    //             pubkey: 266YXq5ZKDnFMfW4c4hqXK5RFSsU9QZxKWtvjXW6sRjt,
+    //             is_signer: false,
+    //             is_writable: true
+    //         },
+    //         AccountMeta {
+    //             pubkey: 2iBUASRfDHgEkuZ91Lvos5NxwnmiryHrNbWBfEVqHRQZ,
+    //             is_signer: true,
+    //             is_writable: true
+    //         },
+    //         AccountMeta {
+    //             pubkey: Sysvar1nstructions1111111111111111111111111,
+    //             is_signer: false,
+    //             is_writable: false
+    //         },
+    //         AccountMeta {
+    //             pubkey: 11111111111111111111111111111111,
+    //             is_signer: false,
+    //             is_writable: false
+    //         }
+    //     ],
+    //     data: [
+    //         126, 21, 38, 168, 43, 51, 118, 133 // DISCRIMINATOR (constant)
+    //     ]
+    // }
+    // ```
+    // Expenses: 1002240 lamports
+    // Reward must cover expenses + 5000 lamports
+    pub fn increment_global_state(ctx: Context<IncrementGlobalState>) -> Result<()> {
         let validated_execute_ext_call =
             check_claiming::ValidatedExecuteExtCallIx::try_from_current_ix(
                 &ctx.accounts.instructions,
@@ -43,6 +87,10 @@ pub mod incrementor {
 
         ctx.accounts.global_state.value += 1;
 
+        emit!(GlobalIncremented {
+            value: ctx.accounts.global_state.value
+        });
+
         Ok(())
     }
 
@@ -51,6 +99,20 @@ pub mod incrementor {
         native_sender: [u8; 20],
     )]
     pub struct IncrementUserState<'info> {
+        // NOTE: This pubkey use user pubkey as part of `Pubkey` seeds.
+        //       Because of that, Substitution is needed:
+        //
+        // ```
+        // AccountIndex: 0
+        // PubkeySubstitution::BySeeds {
+        //    program_id: deincZzsdCg8DjeLsZjA9sTJw2qWP32Bty9aL44FNUk,
+        //    seeds: [
+        //        SeedVariants::Arbitrary(b"USER"),
+        //        SeedVariants::Arbitrary(native_sender),
+        //    ],
+        //    bump: None,
+        // }
+        // ```
         #[account(
             init_if_needed,
             seeds = [
@@ -62,13 +124,63 @@ pub mod incrementor {
             payer = payer,
         )]
         user_state: Account<'info, UserState>,
+        // NOTE: For `payer` you should use `SUBMISSION_PLACEHOLDER` constant
+        // NOTE: Constant (in bs58) `7cu34CRu47UZKLRHjt9kFPhuoYyHCzAafGiGWz83GNFs`
         submission: AccountInfo<'info>,
         #[account(mut)]
+        // NOTE: For `payer` you should use `AUTH_PLACEHOLDER`
+        // NOTE: Constant (in bs58) `2iBUASRfDHgEkuZ91Lvos5NxwnmiryHrNbWBfEVqHRQZ`
         payer: Signer<'info>,
+        // NOTE: Constant (in bs58): `Sysvar1nstructions1111111111111111111111111`
         #[account(address = sysvar::instructions::ID)]
         instructions: AccountInfo<'info>,
+        // NOTE: Constant (in bs58): `11111111111111111111111111111111`
         system_program: Program<'info, System>,
     }
+
+    /// This instruction can be called by native_sender from another network supported by Debridge
+    ///
+    /// This instruction initialize if needed user state account &
+    /// increments the user state of this contract by one
+    ///
+    // ```ron
+    // Instruction {
+    //     program_id: deincZzsdCg8DjeLsZjA9sTJw2qWP32Bty9aL44FNUk,
+    //     accounts: [
+    //         AccountMeta {
+    //             pubkey: 11111111111111111111111111111111, // REPLACED BY SUBSITUTION
+    //             is_signer: false,
+    //             is_writable: true
+    //         },
+    //         AccountMeta {
+    //             pubkey: 7cu34CRu47UZKLRHjt9kFPhuoYyHCzAafGiGWz83GNFs,
+    //             is_signer: false,
+    //             is_writable: false
+    //         },
+    //         AccountMeta {
+    //             pubkey: 2iBUASRfDHgEkuZ91Lvos5NxwnmiryHrNbWBfEVqHRQZ,
+    //             is_signer: true,
+    //             is_writable: true
+    //         },
+    //         AccountMeta {
+    //             pubkey: Sysvar1nstructions1111111111111111111111111,
+    //             is_signer: false,
+    //             is_writable: false
+    //         },
+    //         AccountMeta {
+    //             pubkey: 11111111111111111111111111111111,
+    //             is_signer: false,
+    //             is_writable: false
+    //         }
+    //     ],
+    //     data: [
+    //         109, 53, 55, 244, 247, 63, 196, 165,  // DISCRIMINATOR (constant)
+    //         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 // NATIVE_SENDER
+    //     ]
+    // }
+    // ```
+    // Expenses: 1002240 lamports
+    // Reward must cover expenses + 5000 lamports
     pub fn increment_user_state(
         ctx: Context<IncrementUserState>,
         native_sender: [u8; 20],
@@ -107,6 +219,10 @@ pub mod incrementor {
 
         ctx.accounts.user_state.value += 1;
 
+        emit!(UserIncremented {
+            value: ctx.accounts.user_state.value
+        });
+
         Ok(())
     }
 
@@ -115,6 +231,20 @@ pub mod incrementor {
         native_sender: [u8; 20],
     )]
     pub struct MultiplyStates<'info> {
+        // NOTE: This pubkey use user pubkey as part of `Pubkey` seeds.
+        //       Because of that, Substitution is needed:
+        //
+        // ```
+        // AccountIndex: 0
+        // PubkeySubstitution::BySeeds {
+        //    program_id: deincZzsdCg8DjeLsZjA9sTJw2qWP32Bty9aL44FNUk,
+        //    seeds: [
+        //        SeedVariants::Arbitrary(b"USER"),
+        //        SeedVariants::Arbitrary(native_sender),
+        //    ],
+        //    bump: None,
+        // }
+        // ```
         #[account(
             seeds = [
                 b"USER",
@@ -123,6 +253,8 @@ pub mod incrementor {
             bump,
         )]
         user_state: Account<'info, UserState>,
+        // NOTE: For `global_state` you can use constant `Pubkey` calculated beforehand
+        // Pubkey (bs58): `266YXq5ZKDnFMfW4c4hqXK5RFSsU9QZxKWtvjXW6sRjt`
         #[account(
             seeds = [
                 b"STATE"
@@ -131,6 +263,35 @@ pub mod incrementor {
         )]
         global_state: Account<'info, GlobalState>,
     }
+
+    /// This instruction can be called by native_sender from another network supported by Debridge
+    ///
+    /// This instruction initialize if needed user state account &
+    /// increments the user state of this contract by one
+    ///
+    // ```ron
+    // Instruction {
+    //     program_id: deincZzsdCg8DjeLsZjA9sTJw2qWP32Bty9aL44FNUk,
+    //     accounts: [
+    //         AccountMeta {
+    //             pubkey: 11111111111111111111111111111111, // REPLACED BY SUBSITUTION
+    //             is_signer: false,
+    //             is_writable: false
+    //         },
+    //         AccountMeta {
+    //             pubkey: 266YXq5ZKDnFMfW4c4hqXK5RFSsU9QZxKWtvjXW6sRjt,
+    //             is_signer: false,
+    //             is_writable: false
+    //         }
+    //     ],
+    //     data: [
+    //         109, 53, 55, 244, 247, 63, 196, 165, // DISCRIMINATOR (constant)
+    //         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 // NATIVE_SENDER
+    //     ]
+    // }
+    // ```
+    // Expenses: 0 lamports
+    // Reward must cover 5000 lamports
     pub fn multiply_states(ctx: Context<MultiplyStates>) -> Result<()> {
         let global = ctx.accounts.global_state.value;
         let user = ctx.accounts.user_state.value;
@@ -143,6 +304,16 @@ pub mod incrementor {
 
         Ok(())
     }
+}
+
+#[event]
+struct GlobalIncremented {
+    value: u64,
+}
+
+#[event]
+struct UserIncremented {
+    value: u64,
 }
 
 #[event]
