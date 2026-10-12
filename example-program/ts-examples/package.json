@@ -24,10 +24,10 @@
   "dependencies": {
     "@coral-xyz/anchor": "0.26.0",
     "@debridge-finance/debridge-external-call": "1.0.7",
-    "@debridge-finance/solana-contracts-client": "^2.4.3",
-    "@debridge-finance/solana-utils": "3.0.0",
+    "@debridge-finance/solana-contracts-client": "^6.2.1",
+    "@debridge-finance/solana-utils": "6.2.4",
     "@solana/spl-token": "0.3.7",
-    "@solana/web3.js": "1.73.2",
+    "@solana/web3.js": "1.73.5",
     "argparse": "2.0.1",
     "dotenv": "16.0.3",
     "ts-node": "10.9.1"
