@@ -23,7 +23,7 @@ codegen-units = 1
 [dev-dependencies]
 anchor-lang = "0.26.0"
 base58 = "0.2.0"
-borsh = "0.9.1"
+borsh = "1.8.1"
 debridge-solana-sdk = {path = "../"}
 debridge-solana-sdk-example-program = { path = "programs/debridge-solana-sdk-example-program" }
 dirs = "4.0"
